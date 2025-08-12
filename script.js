@@ -13,6 +13,7 @@ const album = document.getElementById('album');
 // F値の円操作用
 const apertureControl = document.querySelector('.aperture-control');
 const fValueDisplay = document.getElementById('f-value-display');
+const fValueDecideBtn = document.getElementById('f-value-decide-btn'); // 決定ボタン
 
 // --- 画面切り替えのロジック ---
 /**
@@ -35,11 +36,10 @@ descScreen.addEventListener('click', () => {
   showScreen('screen-fvalue-input');
 });
 
-// F値入力画面のイベントリスナー
-fValueInputScreen.addEventListener('click', () => {
-  // 円の操作で画面が切り替わるため、このイベントは無効
-  // showScreen('screen-camera');
-  // startCamera();
+// F値決定ボタンのイベントリスナー
+fValueDecideBtn.addEventListener('click', () => {
+  showScreen('screen-camera');
+  startCamera();
 });
 
 // --- カメラ起動機能 ---
@@ -58,6 +58,8 @@ async function startCamera(){
 
 // --- 円周上のタッチイベント処理 ---
 let isTouching = false;
+const F_VALUE_MIN = 1.2;
+const F_VALUE_MAX = 32;
 
 apertureControl.addEventListener('touchstart', (e) => {
   isTouching = true;
@@ -72,12 +74,7 @@ apertureControl.addEventListener('touchmove', (e) => {
 });
 
 apertureControl.addEventListener('touchend', () => {
-  if (isTouching) {
-    isTouching = false;
-    // F値設定後、カメラ画面に自動的に切り替える
-    showScreen('screen-camera');
-    startCamera();
-  }
+  isTouching = false;
 });
 
 function updateFValue(touchX, touchY) {
@@ -89,13 +86,19 @@ function updateFValue(touchX, touchY) {
   if (angle < 0) {
     angle += 2 * Math.PI;
   }
-
-  let fValue = Math.round((angle / (2 * Math.PI)) * 15) + 1;
-  fValue = Math.max(1, Math.min(16, fValue));
-
-  fValueDisplay.textContent = fValue;
-  aperture.value = fValue;
   
+  // 角度をF値（1.2〜32）にマッピング
+  let fValue = (angle / (2 * Math.PI)) * (F_VALUE_MAX - F_VALUE_MIN) + F_VALUE_MIN;
+  fValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, fValue)); // 範囲に制限
+
+  // F値の表示を小数点第1位までに
+  const formattedFValue = fValue.toFixed(1);
+
+  // UIとinput hiddenに値を反映
+  fValueDisplay.textContent = formattedFValue;
+  aperture.value = formattedFValue;
+  
+  // 視覚効果を即座に更新
   applyVisuals();
 }
 
@@ -109,7 +112,6 @@ const BUFFER_LEN = 30;
 const PEAK_THRESHOLD = 2.5;
 
 setInterval(() => {
-  // カメラ画面がアクティブな時のみ計測
   if (!cameraScreen.classList.contains('active') || video.videoWidth === 0 || video.videoHeight === 0) return;
   
   const ctx = canvas.getContext('2d');
@@ -149,8 +151,8 @@ setInterval(() => {
 
 // --- 視覚表現(シャッタースピード=明暗、F値=ぼけ) ---
 function applyVisuals(){
-  const f = parseInt(aperture.value, 10);
-  const blurAmount = Math.max(0, (16 - f) / 2.2);
+  const f = parseFloat(aperture.value);
+  const blurAmount = Math.max(0, (F_VALUE_MAX - f) / 10); // 調整
   const normalized = Math.min(160, Math.max(40, bpm || 100));
   const brightness = ( (normalized - 40) / (160 - 40) ) * (1.6 - 0.6) + 0.6;
   let colorFilter = '';
@@ -202,6 +204,7 @@ function addPhotoToAlbum(photo){
 
 // ページ読み込み時に復元
 window.addEventListener('load', () => {
+  showScreen('screen-intro');
   const saved = JSON.parse(localStorage.getItem('album') || '[]');
   saved.reverse().forEach(p => addPhotoToAlbum(p));
 });

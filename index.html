@@ -1,32 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>心のF値カメラ v2</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UTSURE | こころのF値</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="wrap">
-    <h1>📸 心のF値カメラ</h1>
 
-    <div class="viewer">
-      <video id="video" autoplay playsinline></video>
-      <canvas id="canvas" style="display:none;"></canvas>
-    </div>
+  <div class="app-container">
 
-    <div class="controls">
-      <label class="label">心の開き具合 (F値)</label>
-      <input type="range" id="aperture" min="1" max="16" value="5">
-      <div class="meter-row">
-        <div class="bpm-label">シャッタースピード (BPM): <span id="bpm">計測中...</span></div>
-        <button id="capture" class="btn">📷 撮影</button>
+    <div id="screen-intro" class="screen active">
+      <div class="content">
+        <h1>わたしたちは<br>UTSURE です</h1>
       </div>
     </div>
 
-    <h2>アルバム</h2>
-    <div id="album" class="album"></div>
-  </main>
+    <div id="screen-desc" class="screen">
+      <div class="content">
+        <p>カメラの可能性を信じて<br>カメラと人との交流による<br>新たな価値を<br>さがしています</p>
+      </div>
+    </div>
+
+    <div id="screen-fvalue-input" class="screen">
+      <div class="content">
+        <p>まずは<br>今のあなたの<br>こころの開き具合<br>すなわち<br>こころのF値を<br>おしえてください</p>
+        <input type="range" id="aperture" min="1" max="16" value="5">
+      </div>
+    </div>
+
+    <div id="screen-camera" class="screen">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+      <div class="camera-ui">
+        <p class="bpm-label">こころのF値:<span id="bpm">--</span></p>
+        <button id="capture" class="btn">撮影</button>
+      </div>
+    </div>
+  </div>
 
 <script src="script.js"></script>
 </body>

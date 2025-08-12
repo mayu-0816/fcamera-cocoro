@@ -25,7 +25,11 @@
     <div id="screen-fvalue-input" class="screen">
       <div class="content">
         <p>まずは<br>今のあなたの<br>こころの開き具合<br>すなわち<br>こころのF値を<br>おしえてください</p>
-        <input type="range" id="aperture" min="1" max="16" value="5">
+        <div class="aperture-control">
+          <div class="aperture-ring"></div>
+          <div class="aperture-value">F<span id="f-value-display">5</span></div>
+          <input type="hidden" id="aperture" value="5">
+        </div>
       </div>
     </div>
 

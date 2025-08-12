@@ -1,33 +1,148 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>心のF値カメラ v2</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <main class="wrap">
-    <h1>📸 心のF値カメラ</h1>
+/* 全体共通 */
+:root {
+  --text-color: #333;
+  --bg-color: #fff;
+  --phone-frame-color: #f1f1f1;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
 
-    <div class="viewer">
-      <video id="video" autoplay playsinline></video>
-      <canvas id="canvas" style="display:none;"></canvas>
-    </div>
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--phone-frame-color);
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
 
-    <div class="controls">
-      <label class="label">心の開き具合 (F値)</label>
-      <input type="range" id="aperture" min="1" max="16" value="5">
-      <div class="meter-row">
-        <div class="bpm-label">シャッタースピード (BPM): <span id="bpm">計測中...</span></div>
-        <button id="capture" class="btn">📷 撮影</button>
-      </div>
-    </div>
+/* スマホ画面のフレーム */
+.app-container {
+  position: relative;
+  width: 375px; /* iPhone X/XS/11 Pro */
+  height: 812px;
+  background: var(--bg-color);
+  border-radius: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
 
-    <h2>アルバム</h2>
-    <div id="album" class="album"></div>
-  </main>
+/* 各画面の基本スタイル */
+.screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  pointer-events: none; /* 非表示時はイベントを無効化 */
+}
 
-<script src="script.js"></script>
-</body>
-</html>
+.screen.active {
+  opacity: 1;
+  pointer-events: auto; /* 表示時はイベントを有効化 */
+}
+
+/* 各画面のコンテンツ */
+.screen .content {
+  max-width: 80%;
+}
+
+#screen-intro h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+#screen-desc p {
+  font-size: 1.2rem;
+  line-height: 2;
+  color: #555;
+}
+
+#screen-fvalue-input p {
+  font-size: 1.5rem;
+  line-height: 1.8;
+  font-weight: 500;
+  color: #555;
+}
+
+/* F値操作の円のスタイル */
+.aperture-control {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 40px auto;
+}
+
+.aperture-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid #ccc;
+  box-sizing: border-box;
+}
+
+.aperture-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* カメラ画面 */
+#screen-camera {
+  background-color: #000;
+  justify-content: flex-start;
+  padding-top: 50px;
+}
+
+#video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+#canvas {
+  display: none; /* ユーザーには見せない */
+}
+
+.camera-ui {
+  position: relative;
+  z-index: 2;
+  margin-top: auto; /* 下部に配置 */
+  padding-bottom: 50px;
+}
+
+.bpm-label {
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.btn {
+  background: white;
+  color: #333;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}

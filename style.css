@@ -56,6 +56,10 @@ body {
 /* 各画面のコンテンツ */
 .screen .content {
   max-width: 80%;
+  margin-top: -150px; /* 上部に寄せる */
+}
+#screen-fvalue-input .content{
+  margin-top: 0;
 }
 
 #screen-intro h1 {
@@ -75,6 +79,12 @@ body {
   line-height: 1.8;
   font-weight: 500;
   color: #555;
+}
+
+.f-value-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 20px;
 }
 
 /* F値操作の円のスタイル */
@@ -98,8 +108,30 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: bold;
+}
+
+/* F値決定画面の下部テキストとボタン */
+.description-text {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.description-text p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #555;
+  margin: 0 0 20px 0;
+}
+
+#f-value-decide-btn {
+  width: 100%;
+  margin-bottom: 20px;
 }
 
 /* カメラ画面 */
@@ -120,13 +152,13 @@ body {
 }
 
 #canvas {
-  display: none; /* ユーザーには見せない */
+  display: none;
 }
 
 .camera-ui {
   position: relative;
   z-index: 2;
-  margin-top: auto; /* 下部に配置 */
+  margin-top: auto;
   padding-bottom: 50px;
 }
 

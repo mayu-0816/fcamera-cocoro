@@ -6,9 +6,13 @@ const cameraScreen = document.getElementById('screen-camera');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const bpmDisplay = document.getElementById('bpm');
-const aperture = document.getElementById('aperture');
+const aperture = document.getElementById('aperture'); // input[type="hidden"]
 const captureBtn = document.getElementById('capture');
 const album = document.getElementById('album');
+
+// F値の円操作用
+const apertureControl = document.querySelector('.aperture-control');
+const fValueDisplay = document.getElementById('f-value-display');
 
 // --- 画面切り替えのロジック ---
 /**
@@ -33,8 +37,9 @@ descScreen.addEventListener('click', () => {
 
 // F値入力画面をタップしたら、カメラ画面に切り替え、カメラを起動
 fValueInputScreen.addEventListener('click', () => {
-  showScreen('screen-camera');
-  startCamera();
+  // 注意：円を操作中に誤ってクリックしないように、このイベントは削除しても良い
+  // showScreen('screen-camera');
+  // startCamera();
 });
 
 // --- カメラ起動機能 ---
@@ -51,6 +56,51 @@ async function startCamera(){
   }
 }
 
+// --- 円周上のタッチイベント処理 ---
+let isTouching = false;
+
+apertureControl.addEventListener('touchstart', (e) => {
+  isTouching = true;
+  updateFValue(e.touches[0].clientX, e.touches[0].clientY);
+  e.preventDefault(); // スクロール防止
+});
+
+apertureControl.addEventListener('touchmove', (e) => {
+  if (!isTouching) return;
+  updateFValue(e.touches[0].clientX, e.touches[0].clientY);
+  e.preventDefault(); // スクロール防止
+});
+
+apertureControl.addEventListener('touchend', () => {
+  isTouching = false;
+  // F値設定後、カメラ画面に自動的に切り替える
+  showScreen('screen-camera');
+  startCamera();
+});
+
+function updateFValue(touchX, touchY) {
+  const rect = apertureControl.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  // タッチ位置の角度を計算（-πからπラジアン）
+  let angle = Math.atan2(touchY - centerY, touchX - centerX);
+  if (angle < 0) {
+    angle += 2 * Math.PI; // 0から2πの範囲に変換
+  }
+
+  // 角度をF値（1〜16）にマッピング
+  let fValue = Math.round((angle / (2 * Math.PI)) * 15) + 1;
+  fValue = Math.max(1, Math.min(16, fValue)); // 1から16の範囲に制限
+
+  // UIとinput hiddenに値を反映
+  fValueDisplay.textContent = fValue;
+  aperture.value = fValue;
+  
+  // 視覚効果を即座に更新
+  applyVisuals();
+}
+
 // --- 心拍（簡易）計測ロジック ---
 // 原理: カメラに指を置いたときのフレーム内の赤成分変化をピーク検出してBPM算出
 let bpm = 0;
@@ -63,7 +113,9 @@ const BUFFER_LEN = 30;           // 平均用バッファ長
 const PEAK_THRESHOLD = 2.5;      // 前フレームとの差分ピーク閾値（経験値で調整）
 
 setInterval(() => {
-  if (video.videoWidth === 0 || video.videoHeight === 0) return;
+  // カメラ画面がアクティブな時のみ計測
+  if (!cameraScreen.classList.contains('active') || video.videoWidth === 0 || video.videoHeight === 0) return;
+  
   const ctx = canvas.getContext('2d');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -115,9 +167,6 @@ function applyVisuals(){
   }
   video.style.filter = `blur(${blurAmount}px) brightness(${brightness}) ${colorFilter}`;
 }
-
-// 初期反映
-aperture.addEventListener('input', applyVisuals);
 
 // --- 撮影・アルバム（メタデータ付き） ---
 captureBtn.addEventListener('click', () => {

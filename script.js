@@ -35,9 +35,9 @@ descScreen.addEventListener('click', () => {
   showScreen('screen-fvalue-input');
 });
 
-// F値入力画面をタップしたら、カメラ画面に切り替え、カメラを起動
+// F値入力画面のイベントリスナー
 fValueInputScreen.addEventListener('click', () => {
-  // 注意：円を操作中に誤ってクリックしないように、このイベントは削除しても良い
+  // 円の操作で画面が切り替わるため、このイベントは無効
   // showScreen('screen-camera');
   // startCamera();
 });
@@ -72,10 +72,12 @@ apertureControl.addEventListener('touchmove', (e) => {
 });
 
 apertureControl.addEventListener('touchend', () => {
-  isTouching = false;
-  // F値設定後、カメラ画面に自動的に切り替える
-  showScreen('screen-camera');
-  startCamera();
+  if (isTouching) {
+    isTouching = false;
+    // F値設定後、カメラ画面に自動的に切り替える
+    showScreen('screen-camera');
+    startCamera();
+  }
 });
 
 function updateFValue(touchX, touchY) {
@@ -83,34 +85,28 @@ function updateFValue(touchX, touchY) {
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
 
-  // タッチ位置の角度を計算（-πからπラジアン）
   let angle = Math.atan2(touchY - centerY, touchX - centerX);
   if (angle < 0) {
-    angle += 2 * Math.PI; // 0から2πの範囲に変換
+    angle += 2 * Math.PI;
   }
 
-  // 角度をF値（1〜16）にマッピング
   let fValue = Math.round((angle / (2 * Math.PI)) * 15) + 1;
-  fValue = Math.max(1, Math.min(16, fValue)); // 1から16の範囲に制限
+  fValue = Math.max(1, Math.min(16, fValue));
 
-  // UIとinput hiddenに値を反映
   fValueDisplay.textContent = fValue;
   aperture.value = fValue;
   
-  // 視覚効果を即座に更新
   applyVisuals();
 }
 
 // --- 心拍（簡易）計測ロジック ---
-// 原理: カメラに指を置いたときのフレーム内の赤成分変化をピーク検出してBPM算出
 let bpm = 0;
 let redBuffer = [];
 let lastPeakTime = 0;
 
-// 設定（調整可能）:
-const SAMPLE_INTERVAL_MS = 60;    // 取得間隔（ms）
-const BUFFER_LEN = 30;           // 平均用バッファ長
-const PEAK_THRESHOLD = 2.5;      // 前フレームとの差分ピーク閾値（経験値で調整）
+const SAMPLE_INTERVAL_MS = 60;
+const BUFFER_LEN = 30;
+const PEAK_THRESHOLD = 2.5;
 
 setInterval(() => {
   // カメラ画面がアクティブな時のみ計測
@@ -121,7 +117,6 @@ setInterval(() => {
   canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // 中央小領域だけ取って軽量化（指を置いている想定）
   const w = Math.floor(canvas.width * 0.4);
   const h = Math.floor(canvas.height * 0.4);
   const sx = Math.floor((canvas.width - w) / 2);
@@ -129,13 +124,12 @@ setInterval(() => {
   const frame = ctx.getImageData(sx, sy, w, h);
   let redSum = 0;
   for (let i = 0; i < frame.data.length; i += 4) {
-    redSum += frame.data[i]; // R
+    redSum += frame.data[i];
   }
   const avgRed = redSum / (frame.data.length / 4);
   redBuffer.push(avgRed);
   if (redBuffer.length > BUFFER_LEN) redBuffer.shift();
 
-  // シンプル差分ピーク検出
   if (redBuffer.length >= 3) {
     const len = redBuffer.length;
     const prev = redBuffer[len - 2];

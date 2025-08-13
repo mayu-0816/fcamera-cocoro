@@ -103,7 +103,7 @@ function updateFValueDisplay(fValue) {
   const formattedFValue = controlledFValue.toFixed(1);
 
   // F値の表示形式を修正
-  fValueDisplay.textContent = ${formattedFValue}`;
+  fValueDisplay.textContent = `F${formattedFValue}`;
   aperture.value = formattedFValue;
   currentFValue = controlledFValue;
   
@@ -224,4 +224,3 @@ window.addEventListener('load', () => {
   const saved = JSON.parse(localStorage.getItem('album') || '[]');
   saved.reverse().forEach(p => addPhotoToAlbum(p));
 });
-

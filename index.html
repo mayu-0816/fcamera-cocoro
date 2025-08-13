@@ -22,21 +22,25 @@
       </div>
     </div>
 
-    <div id="screen-fvalue-input" class="screen">
-      <div class="content">
-        <p class="f-value-title">こころのF値</p>
-        <div class="aperture-control">
-          <div class="aperture-ring"></div>
-          <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
-          <input type="hidden" id="aperture" value="1.2">
-        </div>
-      </div>
-      <div class="description-text">
-        <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
-        <button id="f-value-decide-btn" class="btn">決定</button>
-      </div>
-    </div>
-
+<div id="screen-fvalue-input" class="screen">
+  <div class="f-value-title-container">
+    <p class="f-value-title">こころのF値</p>
+  </div>
+  <div class="aperture-control-container">
+    <div class="aperture-control">
+      <div class="aperture-ring"></div>
+      <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
+      <input type="hidden" id="aperture" value="1.2">
+    </div>
+  </div>
+  <div class="description-text-container">
+    <div class="description-text">
+      <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
+    </div>
+    <button id="f-value-decide-btn" class="btn">決定</button>
+  </div>
+</div>
+    
     <div id="screen-camera" class="screen">
       <video id="video" autoplay playsinline></video>
       <canvas id="canvas" style="display:none;"></canvas>
@@ -50,3 +54,4 @@
 <script src="script.js"></script>
 </body>
 </html>
+

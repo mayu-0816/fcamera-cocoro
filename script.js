@@ -14,7 +14,6 @@ const album = document.getElementById('album');
 const apertureControl = document.querySelector('.aperture-control');
 const fValueDisplay = document.getElementById('f-value-display');
 const fValueDecideBtn = document.getElementById('f-value-decide-btn');
-const apertureRing = document.querySelector('.aperture-ring');
 
 // ピンチジェスチャーのための変数
 let touchStartDistance = null;

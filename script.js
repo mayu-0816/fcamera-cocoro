@@ -6,21 +6,25 @@ const cameraScreen = document.getElementById('screen-camera');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const bpmDisplay = document.getElementById('bpm');
-const aperture = document.getElementById('aperture'); // input[type="hidden"]
+const aperture = document.getElementById('aperture');
 const captureBtn = document.getElementById('capture');
 const album = document.getElementById('album');
 
 // F値の円操作用
 const apertureControl = document.querySelector('.aperture-control');
 const fValueDisplay = document.getElementById('f-value-display');
-const fValueDecideBtn = document.getElementById('f-value-decide-btn'); // 決定ボタン
-const apertureRing = document.querySelector('.aperture-ring'); // F値の円
+const fValueDecideBtn = document.getElementById('f-value-decide-btn');
+const apertureRing = document.querySelector('.aperture-ring');
+
+// ピンチジェスチャーのための変数
+let touchStartDistance = null;
+let currentFValue = 1.2;
+
+// F値の最小・最大値
+const F_VALUE_MIN = 1.2;
+const F_VALUE_MAX = 32;
 
 // --- 画面切り替えのロジック ---
-/**
- * 指定された画面を表示し、他の画面を非表示にします。
- * @param {string} screenId - 表示する画面のID
- */
 function showScreen(screenId) {
   document.querySelectorAll('.screen').forEach(screen => {
     screen.classList.remove('active');
@@ -44,9 +48,6 @@ fValueDecideBtn.addEventListener('click', () => {
 });
 
 // --- カメラ起動機能 ---
-/**
- * カメラを起動し、映像をvideo要素にストリーミングします。
- */
 async function startCamera(){
   try{
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
@@ -57,56 +58,58 @@ async function startCamera(){
   }
 }
 
-// --- 円周上のタッチイベント処理 ---
-let isTouching = false;
-const F_VALUE_MIN = 1.2;
-const F_VALUE_MAX = 32;
-
+// --- ピンチジェスチャーでのF値変更ロジック ---
 apertureControl.addEventListener('touchstart', (e) => {
-  isTouching = true;
-  updateFValue(e.touches[0].clientX, e.touches[0].clientY);
-  e.preventDefault(); // スクロール防止
+  if (e.touches.length === 2) {
+    touchStartDistance = getTouchDistance(e.touches);
+    e.preventDefault();
+  }
 });
 
 apertureControl.addEventListener('touchmove', (e) => {
-  if (!isTouching) return;
-  updateFValue(e.touches[0].clientX, e.touches[0].clientY);
-  e.preventDefault(); // スクロール防止
-});
-
-apertureControl.addEventListener('touchend', () => {
-  isTouching = false;
-});
-
-function updateFValue(touchX, touchY) {
-  const rect = apertureControl.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-
-  let angle = Math.atan2(touchY - centerY, touchX - centerX);
-  if (angle < 0) {
-    angle += 2 * Math.PI;
+  if (e.touches.length === 2 && touchStartDistance !== null) {
+    const currentDistance = getTouchDistance(e.touches);
+    const distanceDiff = currentDistance - touchStartDistance;
+    
+    // 距離の差分をF値の変更量にマッピング
+    const fValueChange = distanceDiff * 0.1;
+    let newFValue = currentFValue + fValueChange;
+    
+    newFValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, newFValue));
+    
+    updateFValueDisplay(newFValue);
+    
+    touchStartDistance = currentDistance;
+    e.preventDefault();
   }
-  
-  // 角度をF値（1.2〜32）にマッピング
-  let fValue = (angle / (2 * Math.PI)) * (F_VALUE_MAX - F_VALUE_MIN) + F_VALUE_MIN;
-  fValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, fValue)); // 範囲に制限
+});
 
-  // F値の表示を小数点第1位までに
+apertureControl.addEventListener('touchend', (e) => {
+  touchStartDistance = null;
+  currentFValue = parseFloat(aperture.value);
+});
+
+// 2本の指の間の距離を計算
+function getTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// F値の表示と円のサイズを更新する関数
+function updateFValueDisplay(fValue) {
   const formattedFValue = fValue.toFixed(1);
-
-  // UIとinput hiddenに値を反映
   fValueDisplay.textContent = formattedFValue;
   aperture.value = formattedFValue;
-
+  currentFValue = fValue;
+  
   // F値の変更に合わせて円のサイズも変更
-  // F値が小さいほど円も小さく（F1.2で最小、F32で最大）
-  const minSize = 100; // 最小サイズ（ピクセル）
-  const maxSize = 250; // 最大サイズ（ピクセル）
+  const minSize = 100;
+  const maxSize = 250;
   const size = ((fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN)) * (maxSize - minSize) + minSize;
   apertureRing.style.width = `${size}px`;
   apertureRing.style.height = `${size}px`;
-
+  
   applyVisuals();
 }
 
@@ -210,9 +213,10 @@ function addPhotoToAlbum(photo){
   album.prepend(card);
 }
 
-// ページ読み込み時に復元
+// ページ読み込み時に初期F値を表示
 window.addEventListener('load', () => {
   showScreen('screen-intro');
+  updateFValueDisplay(F_VALUE_MIN); // 初期F値を設定
   const saved = JSON.parse(localStorage.getItem('album') || '[]');
   saved.reverse().forEach(p => addPhotoToAlbum(p));
 });

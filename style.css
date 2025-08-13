@@ -100,10 +100,10 @@ body {
 
 .aperture-control {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 200px; /* 修正箇所: 初期サイズを固定 */
+  height: 200px; /* 修正箇所: 初期サイズを固定 */
   transition: all 0.2s ease-in-out;
-  z-index: 5; /* 修正箇所: z-indexを高く設定して、イベントを確実に受け取る */
+  z-index: 5;
 }
 
 .aperture-ring {

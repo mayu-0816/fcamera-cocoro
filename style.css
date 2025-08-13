@@ -1,183 +1,184 @@
 /* 全体共通 */
 :root {
-  --text-color: #333;
-  --bg-color: #fff;
-  --phone-frame-color: #f1f1f1;
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+--text-color: #333;
+--bg-color: #fff;
+--phone-frame-color: #f1f1f1;
+--font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
-  margin: 0;
-  font-family: var(--font-family);
-  background-color: var(--phone-frame-color);
-  color: var(--text-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  overflow: hidden;
+margin: 0;
+font-family: var(--font-family);
+background-color: var(--phone-frame-color);
+color: var(--text-color);
+display: flex;
+justify-content: center;
+align-items: center;
+height: 100vh;
+overflow: hidden;
 }
 
-/* スマホ画面のフレーム */
+/* スマホ画面のフレーム /
 .app-container {
-  position: relative;
-  width: 375px; /* iPhone X/XS/11 Pro */
-  height: 812px;
-  background: var(--bg-color);
-  border-radius: 40px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+position: relative;
+width: 375px; / iPhone X/XS/11 Pro */
+height: 812px;
+background: var(--bg-color);
+border-radius: 40px;
+box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+overflow: hidden;
 }
 
 /* 各画面の基本スタイル */
 .screen {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
-  box-sizing: border-box;
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-  pointer-events: none;
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+text-align: center;
+padding: 20px;
+box-sizing: border-box;
+opacity: 0;
+transition: opacity 0.5s ease-in-out;
+pointer-events: none;
 }
 
 .screen.active {
-  opacity: 1;
-  pointer-events: auto;
+opacity: 1;
+pointer-events: auto;
 }
 
-/* 画面ごとのレイアウト調整 */
+/* 画面ごとのレイアウト調整 /
 #screen-fvalue-input {
-  display: flex; /* Flexboxに変更 */
-  flex-direction: column;
-  justify-content: space-between; /* 上下均等に配置 */
-  align-items: center;
-  padding: 40px 20px;
-  position: relative;
-  height: 100%;
-  width: 100%;
+display: flex; / Flexboxに変更 /
+flex-direction: column;
+justify-content: space-between; / 上下均等に配置 */
+align-items: center;
+padding: 40px 20px;
+position: relative;
+height: 100%;
+width: 100%;
 }
 
 /* F値入力画面の各要素 */
 .f-value-title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  padding-top: 20px;
-  z-index: 3;
+font-size: 2rem;
+font-weight: 700;
+margin-bottom: 20px;
+padding-top: 20px;
+z-index: 3;
 }
 
 .aperture-control-container {
-  flex-grow: 1; /* 中央のスペースを占有 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  width: 100%;
-  height: 100%;
-  z-index: 1; /* 円のコンテナを文字より奥に */
+flex-grow: 1; /* 中央のスペースを占有 /
+display: flex;
+justify-content: center;
+align-items: center;
+position: relative;
+width: 100%;
+height: 100%;
+top: 40%; / 位置を少し上に調整 /
+z-index: 1; / 円のコンテナを文字より奥に */
 }
 
 .aperture-control {
-  position: relative; /* 子要素の位置調整のため relative に変更 */
-  width: 200px;
-  height: 200px;
-  transition: all 0.2s ease-in-out;
+position: relative; /* 子要素の位置調整のため relative に変更 */
+width: 200px;
+height: 200px;
+transition: all 0.2s ease-in-out;
 }
 
 .aperture-ring {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 4px solid #ccc;
-  box-sizing: border-box;
-  background: #f0f0f0;
-  box-shadow:
-    inset 0 0 10px rgba(0, 0, 0, 0.1),
-    0 5px 15px rgba(0, 0, 0, 0.2),
-    0 0 0 4px rgba(255, 255, 255, 0.5),
-    0 0 0 8px rgba(0, 0, 0, 0.05);
+width: 100%;
+height: 100%;
+border-radius: 50%;
+border: 4px solid #ccc;
+box-sizing: border-box;
+background: #f0f0f0;
+box-shadow:
+inset 0 0 10px rgba(0, 0, 0, 0.1),
+0 5px 15px rgba(0, 0, 0, 0.2),
+0 0 0 4px rgba(255, 255, 255, 0.5),
+0 0 0 8px rgba(0, 0, 0, 0.05);
 }
 
 .aperture-value {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 2.5rem;
-  font-weight: bold;
-  z-index: 3; /* 文字を円より手前に表示 */
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+font-size: 2.5rem;
+font-weight: bold;
+z-index: 3; /* 文字を円より手前に表示 */
 }
 
 .description-text {
-  width: 100%;
-  padding: 20px;
-  box-sizing: border-box;
-  text-align: center;
-  z-index: 3;
+width: 100%;
+padding: 20px;
+box-sizing: border-box;
+text-align: center;
+z-index: 3;
 }
 
 .description-text p {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: #555;
-  margin: 0;
+font-size: 0.9rem;
+line-height: 1.5;
+color: #555;
+margin: 0;
 }
 
 #f-value-decide-btn {
-  width: 100%;
-  margin-top: 20px;
-  z-index: 3;
+width: 100%;
+margin-top: 20px;
+z-index: 3;
 }
 
 /* カメラ画面 */
 #screen-camera {
-  background-color: #000;
-  justify-content: flex-start;
-  padding-top: 50px;
+background-color: #000;
+justify-content: flex-start;
+padding-top: 50px;
 }
 
 #video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
+width: 100%;
+height: 100%;
+object-fit: cover;
+position: absolute;
+top: 0;
+left: 0;
+z-index: 1;
 }
 
 #canvas {
-  display: none;
+display: none;
 }
 
 .camera-ui {
-  position: relative;
-  z-index: 2;
-  margin-top: auto;
-  padding-bottom: 50px;
+position: relative;
+z-index: 2;
+margin-top: auto;
+padding-bottom: 50px;
 }
 
 .bpm-label {
-  color: #fff;
-  font-size: 1.2rem;
+color: #fff;
+font-size: 1.2rem;
 }
 
 .btn {
-  background: white;
-  color: #333;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 999px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+background: white;
+color: #333;
+border: none;
+padding: 15px 30px;
+border-radius: 999px;
+font-size: 16px;
+font-weight: bold;
+cursor: pointer;
+box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }

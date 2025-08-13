@@ -103,6 +103,7 @@ body {
   width: 200px;
   height: 200px;
   transition: all 0.2s ease-in-out;
+  z-index: 5; /* 修正箇所: z-indexを高く設定して、イベントを確実に受け取る */
 }
 
 .aperture-ring {

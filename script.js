@@ -14,6 +14,7 @@ const album = document.getElementById('album');
 const apertureControl = document.querySelector('.aperture-control');
 const fValueDisplay = document.getElementById('f-value-display');
 const fValueDecideBtn = document.getElementById('f-value-decide-btn'); // 決定ボタン
+const apertureRing = document.querySelector('.aperture-ring'); // F値の円
 
 // --- 画面切り替えのロジック ---
 /**
@@ -97,8 +98,15 @@ function updateFValue(touchX, touchY) {
   // UIとinput hiddenに値を反映
   fValueDisplay.textContent = formattedFValue;
   aperture.value = formattedFValue;
-  
-  // 視覚効果を即座に更新
+
+  // F値の変更に合わせて円のサイズも変更
+  // F値が小さいほど円も小さく（F1.2で最小、F32で最大）
+  const minSize = 100; // 最小サイズ（ピクセル）
+  const maxSize = 250; // 最大サイズ（ピクセル）
+  const size = ((fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN)) * (maxSize - minSize) + minSize;
+  apertureRing.style.width = `${size}px`;
+  apertureRing.style.height = `${size}px`;
+
   applyVisuals();
 }
 
@@ -152,7 +160,7 @@ setInterval(() => {
 // --- 視覚表現(シャッタースピード=明暗、F値=ぼけ) ---
 function applyVisuals(){
   const f = parseFloat(aperture.value);
-  const blurAmount = Math.max(0, (F_VALUE_MAX - f) / 10); // 調整
+  const blurAmount = Math.max(0, (F_VALUE_MAX - f) / 10);
   const normalized = Math.min(160, Math.max(40, bpm || 100));
   const brightness = ( (normalized - 40) / (160 - 40) ) * (1.6 - 0.6) + 0.6;
   let colorFilter = '';

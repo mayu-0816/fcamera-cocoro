@@ -6,6 +6,11 @@
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* 修正箇所：すべての要素にbox-sizing: border-box;を追加 */
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: var(--font-family);
@@ -28,10 +33,6 @@ body {
   border-radius: 40px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  /* 修正箇所：以下の3行を削除 */
-  /* display: flex; */
-  /* justify-content: center; */
-  /* align-items: center; */
 }
 
 /* 各画面の基本スタイル */
@@ -47,7 +48,6 @@ body {
   align-items: center;
   text-align: center;
   padding: 20px;
-  box-sizing: border-box;
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
   pointer-events: none;
@@ -69,7 +69,6 @@ body {
   height: 100%;
   width: 100%;
   padding: 20px;
-  box-sizing: border-box;
 }
 
 .f-value-title-container {
@@ -138,7 +137,6 @@ body {
   width: 100%;
   margin-top: 20px;
   margin-bottom: 20px;
-  box-sizing: border-box;
   text-align: center;
   z-index: 3;
 }
@@ -162,7 +160,6 @@ body {
   color: white;
   border: 1px solid black;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  box-sizing: border-box;
   z-index: 3;
 }
 

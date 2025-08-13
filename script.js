@@ -19,12 +19,10 @@ const apertureRing = document.querySelector('.aperture-ring');
 // ピンチジェスチャーのための変数
 let touchStartDistance = null;
 let currentFValue = 1.2;
-let initialControlScale = 1;
-let touchStartScale = 1;
 
 // F値の最小・最大値
 const F_VALUE_MIN = 1.2;
-const F_VALUE_MAX = 32;
+const F_VALUE_MAX = 32.0;
 
 // --- 画面切り替えのロジック ---
 function showScreen(screenId) {
@@ -61,12 +59,9 @@ async function startCamera(){
 }
 
 // --- ピンチジェスチャーでのF値変更ロジック ---
-// イベントリスナーを画面全体に追加
 fValueInputScreen.addEventListener('touchstart', (e) => {
   if (e.touches.length === 2) {
     touchStartDistance = getTouchDistance(e.touches);
-    const currentScaleMatch = apertureControl.style.transform.match(/scale\((.*?)\)/);
-    touchStartScale = currentScaleMatch ? parseFloat(currentScaleMatch[1]) : 1;
     e.preventDefault();
   }
 });
@@ -74,22 +69,25 @@ fValueInputScreen.addEventListener('touchstart', (e) => {
 fValueInputScreen.addEventListener('touchmove', (e) => {
   if (e.touches.length === 2 && touchStartDistance !== null) {
     const currentDistance = getTouchDistance(e.touches);
-    const scaleFactor = currentDistance / touchStartDistance;
-    const newScale = touchStartScale * scaleFactor;
+    const distanceDiff = currentDistance - touchStartDistance;
     
-    // スケールをF値に変換
-    const minScale = 0.4;
-    const maxScale = 1.2;
-    const normalizedScale = (newScale - minScale) / (maxScale - minScale);
-    const newFValue = F_VALUE_MIN + (F_VALUE_MAX - F_VALUE_MIN) * normalizedScale;
-
+    // 距離の差分をF値の変更量にマッピング
+    const fValueChange = distanceDiff * 0.05; 
+    let newFValue = currentFValue + fValueChange;
+    
+    // F値の最小値・最大値の範囲内に収める
+    newFValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, newFValue));
+    
     updateFValueDisplay(newFValue);
+    
+    touchStartDistance = currentDistance;
     e.preventDefault();
   }
 });
 
 fValueInputScreen.addEventListener('touchend', () => {
   touchStartDistance = null;
+  currentFValue = parseFloat(aperture.value);
 });
 
 // 2本の指の間の距離を計算
@@ -102,17 +100,17 @@ function getTouchDistance(touches) {
 // F値の表示と円のサイズを更新する関数
 function updateFValueDisplay(fValue) {
   const formattedFValue = fValue.toFixed(1);
-  fValueDisplay.textContent = formattedFValue;
+  fValueDisplay.textContent = `F${formattedFValue}`;
   aperture.value = formattedFValue;
   currentFValue = fValue;
   
-  // F値をスケールに変換してaperture-controlに適用
-  const scale = (fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN);
-  const minScale = 0.4; // 最小スケール
-  const maxScale = 1.2; // 最大スケール
-  const visualScale = minScale + (maxScale - minScale) * scale;
-  apertureControl.style.transform = `translate(-50%, -50%) scale(${visualScale})`;
-
+  // F値の変更に合わせて円のサイズも変更
+  const minSize = 100;
+  const maxSize = 350;
+  const size = ((fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN)) * (maxSize - minSize) + minSize;
+  apertureControl.style.width = `${size}px`;
+  apertureControl.style.height = `${size}px`;
+  
   applyVisuals();
 }
 

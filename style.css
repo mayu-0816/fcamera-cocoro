@@ -21,16 +21,17 @@ body {
 /* スマホ画面のフレーム */
 .app-container {
   position: relative;
-  width: 100%; /* 親要素の幅を占有 */
-  max-width: 375px; /* 最大幅を設定してスマホサイズを維持 */
+  width: 100%;
+  max-width: 375px;
   height: 812px;
   background: var(--bg-color);
   border-radius: 40px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  /* 修正箇所：以下の3行を削除 */
+  /* display: flex; */
+  /* justify-content: center; */
+  /* align-items: center; */
 }
 
 /* 各画面の基本スタイル */

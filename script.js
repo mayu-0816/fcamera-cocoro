@@ -9,14 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 画面切り替え関数
     function showScreen(screenId) {
-        // すべての画面を非表示にする
         Object.values(screens).forEach(screen => {
             if (screen) {
                 screen.classList.remove('active');
             }
         });
 
-        // 指定された画面を表示する
         const targetScreen = document.getElementById(screenId);
         if (targetScreen) {
             targetScreen.classList.add('active');
@@ -38,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');
     if (fValueDecideBtn) {
         fValueDecideBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // 親要素へのイベント伝播を停止
+            e.stopPropagation();
             showScreen('screen-camera');
         });
     }
@@ -48,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fValueDisplay = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
     let lastDistance = null;
+    let initialSize = 200; // 修正箇所: 円の初期サイズを定義
 
     if (apertureControl && fValueDisplay && apertureInput) {
         apertureControl.addEventListener('touchstart', (e) => {
@@ -64,9 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const delta = currentDistance - lastDistance;
                     let fValue = parseFloat(apertureInput.value);
 
-                    if (delta > 0) { // ピンチアウト（拡大）
+                    // F値と円のサイズを同時に更新
+                    const newSize = Math.max(100, Math.min(300, apertureControl.offsetWidth + delta));
+                    apertureControl.style.width = `${newSize}px`;
+                    apertureControl.style.height = `${newSize}px`;
+
+                    if (delta > 0 && fValue < 32.0) { // ピンチアウト（拡大）
                         fValue = Math.min(32.0, fValue + 0.1);
-                    } else if (delta < 0) { // ピンチイン（縮小）
+                    } else if (delta < 0 && fValue > 1.2) { // ピンチイン（縮小）
                         fValue = Math.max(1.2, fValue - 0.1);
                     }
                     
@@ -81,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
             lastDistance = null;
         });
 
-        // 2点間の距離を計算するヘルパー関数
         function getDistance(touch1, touch2) {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
@@ -89,6 +92,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 初期画面を表示
     showScreen('screen-splash');
 });

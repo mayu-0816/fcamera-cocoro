@@ -54,10 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.touches.length === 2) {
                 lastDistance = getDistance(e.touches[0], e.touches[1]);
             }
-        });
+        }, { passive: false }); // 修正箇所: { passive: false }を追加
 
         apertureControl.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2) {
+                e.preventDefault(); // 修正箇所: デフォルトのタッチ動作を無効化
                 const currentDistance = getDistance(e.touches[0], e.touches[1]);
                 if (lastDistance) {
                     const delta = currentDistance - lastDistance;
@@ -76,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 lastDistance = currentDistance;
             }
-        });
+        }, { passive: false }); // 修正箇所: { passive: false }を追加
 
         apertureControl.addEventListener('touchend', () => {
             lastDistance = null;

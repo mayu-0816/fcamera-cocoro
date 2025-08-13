@@ -55,26 +55,28 @@ body {
 
 /* 画面ごとのレイアウト調整 */
 #screen-fvalue-input {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
   align-items: center;
-  gap: 20px;
-  position: relative; /* 子要素のabsolute基準とする */
-  height: 100%;
-  width: 100%;
+  padding: 40px 20px;
+  /* 相対位置の基準となるように設定 */
+  position: relative;
 }
 
 /* F値入力画面の各要素 */
 .f-value-title {
+  grid-row: 1;
   font-size: 2rem;
   font-weight: 700;
-  margin-bottom: 0;
-  z-index: 1; /* 円より手前に表示 */
+  margin-bottom: 20px;
+  z-index: 1;
 }
 
 .aperture-control {
-  position: absolute; /* 親要素の中央に固定 */
+  grid-row: 2;
+  /* 親要素の中央に固定 */
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -102,16 +104,16 @@ body {
   transform: translate(-50%, -50%);
   font-size: 2.5rem;
   font-weight: bold;
-  z-index: 2; /* 円より手前に表示 */
+  z-index: 2;
 }
 
 .description-text {
-  position: absolute;
-  bottom: 20px; /* 下部に固定 */
+  grid-row: 3;
   width: 100%;
   padding: 20px;
   box-sizing: border-box;
   z-index: 1;
+  text-align: center;
 }
 
 .description-text p {

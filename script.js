@@ -43,6 +43,53 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // F値決定円のピンチイン・アウト機能
+    const apertureControl = document.querySelector('.aperture-control');
+    const fValueDisplay = document.getElementById('f-value-display');
+    const apertureInput = document.getElementById('aperture');
+    let lastDistance = null;
+
+    if (apertureControl && fValueDisplay && apertureInput) {
+        apertureControl.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                lastDistance = getDistance(e.touches[0], e.touches[1]);
+            }
+        });
+
+        apertureControl.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                const currentDistance = getDistance(e.touches[0], e.touches[1]);
+                if (lastDistance) {
+                    const delta = currentDistance - lastDistance;
+                    let fValue = parseFloat(apertureInput.value);
+
+                    // 許容範囲内でF値を更新
+                    if (delta > 0 && fValue < 32.0) { // ピンチアウト（拡大）
+                        fValue = Math.min(32.0, fValue + 0.1);
+                    } else if (delta < 0 && fValue > 1.2) { // ピンチイン（縮小）
+                        fValue = Math.max(1.2, fValue - 0.1);
+                    }
+                    
+                    // F値の表示とinputの値を更新
+                    fValueDisplay.textContent = fValue.toFixed(1);
+                    apertureInput.value = fValue.toFixed(1);
+                }
+                lastDistance = currentDistance;
+            }
+        });
+
+        apertureControl.addEventListener('touchend', () => {
+            lastDistance = null;
+        });
+
+        // 2点間の距離を計算するヘルパー関数
+        function getDistance(touch1, touch2) {
+            const dx = touch1.pageX - touch2.pageX;
+            const dy = touch1.pageY - touch2.pageY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+    }
+
     // 初期画面を表示
     showScreen('screen-splash');
 });

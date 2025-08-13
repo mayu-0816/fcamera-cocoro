@@ -9,42 +9,40 @@
     <link rel="apple-touch-icon" href="/icon/icon-192x192.png">
 </head>
 <body>
-    <div class="main-container">
-        <div class="app-container">
-            <div id="screen-splash" class="screen active">
-                <p>わたしたちは<br>UTsURE です</p>
-            </div>
+    <div class="app-container">
+        <div id="screen-splash" class="screen active">
+            <p>わたしたちは<br>UTsURE です</p>
+        </div>
 
-            <div id="screen-introduction" class="screen">
-                <p>わたしたちはカメラの可能性を信じ<br>カメラと人との交流による<br>カメラの新たな価値を<br>さがしています</p>
-            </div>
+        <div id="screen-introduction" class="screen">
+            <p>わたしたちはカメラの可能性を信じ<br>カメラと人との交流による<br>カメラの新たな価値を<br>さがしています</p>
+        </div>
 
-            <div id="screen-fvalue-input" class="screen">
-                <div class="f-value-title-container">
-                    <p class="f-value-title">こころのF値</p>
-                </div>
-                <div class="aperture-control-container">
-                    <div class="aperture-control">
-                        <div class="aperture-ring"></div>
-                        <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
-                        <input type="hidden" id="aperture" value="1.2">
-                    </div>
-                </div>
-                <div class="description-text-container">
-                    <div class="description-text">
-                        <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
-                    </div>
-                    <button id="f-value-decide-btn" class="btn">決定</button>
+        <div id="screen-fvalue-input" class="screen">
+            <div class="f-value-title-container">
+                <p class="f-value-title">こころのF値</p>
+            </div>
+            <div class="aperture-control-container">
+                <div class="aperture-control">
+                    <div class="aperture-ring"></div>
+                    <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
+                    <input type="hidden" id="aperture" value="1.2">
                 </div>
             </div>
-
-            <div id="screen-camera" class="screen">
-                <video id="video" playsinline></video>
-                <canvas id="canvas"></canvas>
-                <div class="camera-ui">
-                    <p class="bpm-label">BPM: <span id="bpm-display">--</span></p>
-                    <button class="btn">撮影</button>
+            <div class="description-text-container">
+                <div class="description-text">
+                    <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
                 </div>
+                <button id="f-value-decide-btn" class="btn">決定</button>
+            </div>
+        </div>
+
+        <div id="screen-camera" class="screen">
+            <video id="video" playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="camera-ui">
+                <p class="bpm-label">BPM: <span id="bpm-display">--</span></p>
+                <button class="btn">撮影</button>
             </div>
         </div>
     </div>

@@ -55,9 +55,9 @@ body {
 
 /* 画面ごとのレイアウト調整 */
 #screen-fvalue-input {
-  display: flex; /* flexboxに変更 */
+  display: flex;
   flex-direction: column;
-  justify-content: space-between; /* 要素を上下に均等配置 */
+  justify-content: space-between;
   align-items: center;
   height: 100%;
   width: 100%;
@@ -69,19 +69,19 @@ body {
 .f-value-title {
   font-size: 2rem;
   font-weight: 700;
-  margin: 0;
-  padding-top: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
   z-index: 3;
 }
 
 .aperture-control-container {
   position: relative;
   width: 100%;
-  flex-grow: 1; /* 中央部分を拡大 */
+  flex-grow: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2; /* 円を前面に */
+  z-index: 2;
 }
 
 .aperture-control {
@@ -117,7 +117,8 @@ body {
 
 .description-text {
   width: 100%;
-  padding-bottom: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
   box-sizing: border-box;
   text-align: center;
   z-index: 3;
@@ -131,20 +132,19 @@ body {
 }
 
 #f-value-decide-btn {
-  width: 200px; /* サイズを固定 */
-  margin: 0 auto; /* 中央寄せ */
+  width: 70%; /* サイズを固定 */
+  margin: 0 auto 40px; /* 中央寄せと下部のマージン */
   padding: 15px 30px;
   border-radius: 999px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  background: black; /* 色を黒に変更 */
-  color: white; /* テキストを白に変更 */
+  background: black;
+  color: white;
   border: 1px solid black;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   box-sizing: border-box;
   z-index: 3;
-  margin-top: auto; /* 下部に配置 */
 }
 
 /* カメラ画面 */

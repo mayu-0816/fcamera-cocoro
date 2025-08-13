@@ -72,8 +72,7 @@ fValueInputScreen.addEventListener('touchmove', (e) => {
     
     // 距離の差分をF値の変更量にマッピング
     const sensitivity = 0.05; // 感度を調整
-    const fValueChange = distanceDiff * sensitivity; 
-    let newFValue = currentFValue + fValueChange;
+    let newFValue = currentFValue + distanceDiff * sensitivity;
     
     // F値の最小値・最大値の範囲内に収める
     newFValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, newFValue));
@@ -99,15 +98,18 @@ function getTouchDistance(touches) {
 
 // F値の表示と円のサイズを更新する関数
 function updateFValueDisplay(fValue) {
-  const formattedFValue = fValue.toFixed(1);
+  // F値を最小・最大値の範囲に強制的に収める
+  const controlledFValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, fValue));
+  const formattedFValue = controlledFValue.toFixed(1);
+
   fValueDisplay.textContent = `F${formattedFValue}`;
   aperture.value = formattedFValue;
-  currentFValue = fValue;
+  currentFValue = controlledFValue;
   
   // F値の変更に合わせて円のサイズも変更
   const minSize = 100;
   const maxSize = 350;
-  const size = ((fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN)) * (maxSize - minSize) + minSize;
+  const size = ((controlledFValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN)) * (maxSize - minSize) + minSize;
   apertureControl.style.width = `${size}px`;
   apertureControl.style.height = `${size}px`;
   

@@ -56,12 +56,10 @@ body {
 /* 画面ごとのレイアウト調整 */
 #screen-fvalue-input {
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  justify-items: center;
-  align-items: center;
-  padding: 40px 20px;
-  /* 相対位置の基準となるように設定 */
+  grid-template-rows: auto 1fr auto; /* タイトル, 中央のエリア, 下部エリア */
   position: relative;
+  height: 100%;
+  width: 100%;
 }
 
 /* F値入力画面の各要素 */
@@ -70,13 +68,14 @@ body {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 20px;
-  z-index: 1;
+  padding-top: 20px; /* 上部に隙間を追加 */
+  justify-self: center; /* タイトルを中央に配置 */
+  align-self: start; /* 上部に寄せる */
 }
 
 .aperture-control {
   grid-row: 2;
-  /* 親要素の中央に固定 */
-  position: absolute;
+  position: absolute; /* 親要素の中央に固定 */
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -112,8 +111,9 @@ body {
   width: 100%;
   padding: 20px;
   box-sizing: border-box;
-  z-index: 1;
   text-align: center;
+  align-self: end; /* 下部に寄せる */
+  justify-self: center; /* 中央に配置 */
 }
 
 .description-text p {
@@ -124,8 +124,11 @@ body {
 }
 
 #f-value-decide-btn {
+  grid-row: 3;
   width: 100%;
   margin-top: 20px;
+  align-self: end;
+  justify-self: center;
 }
 
 /* カメラ画面 */

@@ -10,7 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 画面切り替え関数
     function showScreen(screenId) {
         // すべての画面を非表示にする
-        Object.values(screens).forEach(screen => screen.classList.remove('active'));
+        Object.values(screens).forEach(screen => {
+            if (screen) {
+                screen.classList.remove('active');
+            }
+        });
 
         // 指定された画面を表示する
         const targetScreen = document.getElementById(screenId);
@@ -21,11 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // スプラッシュ画面と導入画面へのクリックイベントリスナー
     document.body.addEventListener('click', (e) => {
-        // 現在アクティブな画面を判定し、次の画面へ遷移させる
-        if (screens.splash.classList.contains('active')) {
-            showScreen('screen-introduction');
-        } else if (screens.introduction.classList.contains('active')) {
-            showScreen('screen-fvalue-input');
+        const activeScreen = document.querySelector('.screen.active');
+        if (activeScreen) {
+            const nextScreenId = activeScreen.dataset.nextScreen;
+            if (nextScreenId) {
+                showScreen(nextScreenId);
+            }
         }
     });
 

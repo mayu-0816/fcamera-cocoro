@@ -105,7 +105,7 @@ function updateFValueDisplay(fValue) {
   
   // F値の変更に合わせて円のサイズも変更
   const minSize = 100;
-  const maxSize = 250;
+  const maxSize = 350;
   const size = ((fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN)) * (maxSize - minSize) + minSize;
   apertureRing.style.width = `${size}px`;
   apertureRing.style.height = `${size}px`;
@@ -220,3 +220,4 @@ window.addEventListener('load', () => {
   const saved = JSON.parse(localStorage.getItem('album') || '[]');
   saved.reverse().forEach(p => addPhotoToAlbum(p));
 });
+

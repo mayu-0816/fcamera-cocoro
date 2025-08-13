@@ -59,7 +59,10 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 20px; /* 要素間の隙間を設定 */
+  gap: 20px;
+  position: relative; /* 子要素のabsolute基準とする */
+  height: 100%;
+  width: 100%;
 }
 
 /* F値入力画面の各要素 */
@@ -67,28 +70,28 @@ body {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 0;
+  z-index: 1; /* 円より手前に表示 */
 }
 
 .aperture-control {
-  position: relative;
-  /* JavaScriptで動的にサイズを変更するため、初期サイズを基準にする */
-  width: 100px;
-  height: 100px;
-  transition: all 0.2s ease-in-out; /* サイズ変更が滑らかになるように追加 */
-  transform-origin: center center; /* 中心点を維持する */
+  position: absolute; /* 親要素の中央に固定 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease-in-out;
 }
 
 .aperture-ring {
-  width: 100%; /* 親要素のサイズに合わせる */
-  height: 100%; /* 親要素のサイズに合わせる */
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   border: 4px solid #ccc;
   box-sizing: border-box;
-  background: #f0f0f0; /* 少し明るいグレーに */
+  background: #f0f0f0;
   box-shadow: 
-    inset 0 0 10px rgba(0, 0, 0, 0.1), /* 内側の影 */
-    0 5px 15px rgba(0, 0, 0, 0.2), /* 外側の影 */
-    0 0 0 4px rgba(255, 255, 255, 0.5), /* ハイライト */
+    inset 0 0 10px rgba(0, 0, 0, 0.1),
+    0 5px 15px rgba(0, 0, 0, 0.2),
+    0 0 0 4px rgba(255, 255, 255, 0.5),
     0 0 0 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -99,12 +102,16 @@ body {
   transform: translate(-50%, -50%);
   font-size: 2.5rem;
   font-weight: bold;
+  z-index: 2; /* 円より手前に表示 */
 }
 
 .description-text {
+  position: absolute;
+  bottom: 20px; /* 下部に固定 */
   width: 100%;
   padding: 20px;
   box-sizing: border-box;
+  z-index: 1;
 }
 
 .description-text p {

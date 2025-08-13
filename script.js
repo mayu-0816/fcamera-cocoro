@@ -59,21 +59,20 @@ async function startCamera(){
 }
 
 // --- ピンチジェスチャーでのF値変更ロジック ---
-apertureControl.addEventListener('touchstart', (e) => {
+// イベントリスナーを画面全体に追加
+fValueInputScreen.addEventListener('touchstart', (e) => {
   if (e.touches.length === 2) {
     touchStartDistance = getTouchDistance(e.touches);
     e.preventDefault();
   }
 });
 
-apertureControl.addEventListener('touchmove', (e) => {
+fValueInputScreen.addEventListener('touchmove', (e) => {
   if (e.touches.length === 2 && touchStartDistance !== null) {
     const currentDistance = getTouchDistance(e.touches);
-    const distanceDiff = currentDistance - touchStartDistance;
+    const distanceDiff = (currentDistance - touchStartDistance) / 10;
     
-    // 距離の差分をF値の変更量にマッピング
-    const fValueChange = distanceDiff * 0.1;
-    let newFValue = currentFValue + fValueChange;
+    let newFValue = currentFValue + distanceDiff * 0.1;
     
     newFValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, newFValue));
     
@@ -84,7 +83,7 @@ apertureControl.addEventListener('touchmove', (e) => {
   }
 });
 
-apertureControl.addEventListener('touchend', (e) => {
+fValueInputScreen.addEventListener('touchend', (e) => {
   touchStartDistance = null;
   currentFValue = parseFloat(aperture.value);
 });
@@ -107,8 +106,10 @@ function updateFValueDisplay(fValue) {
   const minSize = 100;
   const maxSize = 350;
   const size = ((fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN)) * (maxSize - minSize) + minSize;
-  apertureRing.style.width = `${size}px`;
-  apertureRing.style.height = `${size}px`;
+  
+  // aperture-controlのサイズを変更して、aperture-ringも連動してサイズが変わるようにする
+  apertureControl.style.width = `${size}px`;
+  apertureControl.style.height = `${size}px`;
   
   applyVisuals();
 }
@@ -220,4 +221,3 @@ window.addEventListener('load', () => {
   const saved = JSON.parse(localStorage.getItem('album') || '[]');
   saved.reverse().forEach(p => addPhotoToAlbum(p));
 });
-

@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showScreen(screenId) {
         // すべての画面を非表示にする
         Object.values(screens).forEach(screen => screen.classList.remove('active'));
-        
+
         // 指定された画面を表示する
         const targetScreen = document.getElementById(screenId);
         if (targetScreen) {
@@ -19,15 +19,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // スプラッシュ画面から導入画面への遷移
-    screens.splash.addEventListener('click', () => {
-        showScreen('screen-introduction');
+    // スプラッシュ画面と導入画面へのクリックイベントリスナー
+    document.body.addEventListener('click', (e) => {
+        // 現在アクティブな画面を判定し、次の画面へ遷移させる
+        if (screens.splash.classList.contains('active')) {
+            showScreen('screen-introduction');
+        } else if (screens.introduction.classList.contains('active')) {
+            showScreen('screen-fvalue-input');
+        }
     });
 
-    // 導入画面からF値入力画面への遷移
-    screens.introduction.addEventListener('click', () => {
-        showScreen('screen-fvalue-input');
-    });
+    // F値入力画面の「決定」ボタンへのクリックイベント
+    const fValueDecideBtn = document.getElementById('f-value-decide-btn');
+    if (fValueDecideBtn) {
+        fValueDecideBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 親要素へのイベント伝播を停止
+            showScreen('screen-camera');
+        });
+    }
 
     // 初期画面を表示
     showScreen('screen-splash');

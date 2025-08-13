@@ -132,8 +132,8 @@ body {
 }
 
 #f-value-decide-btn {
-  width: 70%; /* サイズを固定 */
-  margin: 0 auto 40px; /* 中央寄せと下部のマージン */
+  width: 70%;
+  margin: 0 auto 40px;
   padding: 15px 30px;
   border-radius: 999px;
   font-size: 16px;

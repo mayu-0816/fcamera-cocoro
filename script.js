@@ -102,6 +102,7 @@ function updateFValueDisplay(fValue) {
   const controlledFValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, fValue));
   const formattedFValue = controlledFValue.toFixed(1);
 
+  // F値の表示形式を修正
   fValueDisplay.textContent = `F${formattedFValue}`;
   aperture.value = formattedFValue;
   currentFValue = controlledFValue;

@@ -19,6 +19,8 @@ const apertureRing = document.querySelector('.aperture-ring');
 // ピンチジェスチャーのための変数
 let touchStartDistance = null;
 let currentFValue = 1.2;
+let initialControlScale = 1;
+let touchStartScale = 1;
 
 // F値の最小・最大値
 const F_VALUE_MIN = 1.2;
@@ -63,6 +65,8 @@ async function startCamera(){
 fValueInputScreen.addEventListener('touchstart', (e) => {
   if (e.touches.length === 2) {
     touchStartDistance = getTouchDistance(e.touches);
+    const currentScaleMatch = apertureControl.style.transform.match(/scale\((.*?)\)/);
+    touchStartScale = currentScaleMatch ? parseFloat(currentScaleMatch[1]) : 1;
     e.preventDefault();
   }
 });
@@ -70,22 +74,22 @@ fValueInputScreen.addEventListener('touchstart', (e) => {
 fValueInputScreen.addEventListener('touchmove', (e) => {
   if (e.touches.length === 2 && touchStartDistance !== null) {
     const currentDistance = getTouchDistance(e.touches);
-    const distanceDiff = (currentDistance - touchStartDistance) / 10;
+    const scaleFactor = currentDistance / touchStartDistance;
+    const newScale = touchStartScale * scaleFactor;
     
-    let newFValue = currentFValue + distanceDiff * 0.1;
-    
-    newFValue = Math.max(F_VALUE_MIN, Math.min(F_VALUE_MAX, newFValue));
-    
+    // スケールをF値に変換
+    const minScale = 0.4;
+    const maxScale = 1.2;
+    const normalizedScale = (newScale - minScale) / (maxScale - minScale);
+    const newFValue = F_VALUE_MIN + (F_VALUE_MAX - F_VALUE_MIN) * normalizedScale;
+
     updateFValueDisplay(newFValue);
-    
-    touchStartDistance = currentDistance;
     e.preventDefault();
   }
 });
 
-fValueInputScreen.addEventListener('touchend', (e) => {
+fValueInputScreen.addEventListener('touchend', () => {
   touchStartDistance = null;
-  currentFValue = parseFloat(aperture.value);
 });
 
 // 2本の指の間の距離を計算
@@ -102,15 +106,13 @@ function updateFValueDisplay(fValue) {
   aperture.value = formattedFValue;
   currentFValue = fValue;
   
-  // F値の変更に合わせて円のサイズも変更
-  const minSize = 100;
-  const maxSize = 350;
-  const size = ((fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN)) * (maxSize - minSize) + minSize;
-  
-  // aperture-controlのサイズを変更して、aperture-ringも連動してサイズが変わるようにする
-  apertureControl.style.width = `${size}px`;
-  apertureControl.style.height = `${size}px`;
-  
+  // F値をスケールに変換してaperture-controlに適用
+  const scale = (fValue - F_VALUE_MIN) / (F_VALUE_MAX - F_VALUE_MIN);
+  const minScale = 0.4; // 最小スケール
+  const maxScale = 1.2; // 最大スケール
+  const visualScale = minScale + (maxScale - minScale) * scale;
+  apertureControl.style.transform = `translate(-50%, -50%) scale(${visualScale})`;
+
   applyVisuals();
 }
 

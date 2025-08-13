@@ -1,3 +1,10 @@
+/* CSSリセット */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
 /* 全体共通 */
 :root {
   --text-color: #333;
@@ -11,13 +18,11 @@
 }
 
 body {
-  margin: 0;
   font-family: var(--font-family);
   background-color: var(--phone-frame-color);
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
   overflow: hidden;
 }
 

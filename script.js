@@ -71,7 +71,8 @@ fValueInputScreen.addEventListener('touchmove', (e) => {
     const distanceDiff = currentDistance - touchStartDistance;
     
     // 距離の差分をF値の変更量にマッピング
-    const fValueChange = distanceDiff * 0.05; 
+    const sensitivity = 0.05; // 感度を調整
+    const fValueChange = distanceDiff * sensitivity; 
     let newFValue = currentFValue + fValueChange;
     
     // F値の最小値・最大値の範囲内に収める

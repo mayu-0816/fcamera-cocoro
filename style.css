@@ -72,18 +72,19 @@ body {
   padding-top: 20px;
   justify-self: center;
   align-self: start;
-  z-index: 3;
+  z-index: 3; /* 円よりも手前に表示 */
 }
 
 .aperture-control {
   grid-row: 2;
   position: absolute;
-  top: 50%;
+  top: 40%; /* 画面中央より少し上に配置 */
   left: 50%;
   transform: translate(-50%, -50%);
   width: 200px;
   height: 200px;
   transition: all 0.2s ease-in-out;
+  z-index: 1; /* 円は文字より奥に */
 }
 
 .aperture-ring {
@@ -107,7 +108,7 @@ body {
   transform: translate(-50%, -50%);
   font-size: 2.5rem;
   font-weight: bold;
-  z-index: 2; /* 円より前に表示 */
+  z-index: 2; /* 円よりも手前に表示 */
 }
 
 .description-text {
@@ -118,7 +119,7 @@ body {
   text-align: center;
   align-self: end;
   justify-self: center;
-  z-index: 3;
+  z-index: 3; /* 円よりも手前に表示 */
 }
 
 .description-text p {
@@ -134,7 +135,7 @@ body {
   margin-top: 20px;
   align-self: end;
   justify-self: center;
-  z-index: 3;
+  z-index: 3; /* 円よりも手前に表示 */
 }
 
 /* カメラ画面 */

@@ -73,18 +73,19 @@ body {
 .aperture-control {
   grid-row: 2;
   position: relative;
+  /* JavaScriptで動的にサイズを変更するため、初期サイズはここを基準にする */
+  width: 100px;
+  height: 100px;
   margin: 20px auto;
-  /* 親要素のサイズは固定せず、子要素のaperture-ringでサイズを定義する */
+  transition: all 0.2s ease-in-out; /* サイズ変更が滑らかになるように追加 */
 }
 
 .aperture-ring {
+  width: 100%; /* 親要素のサイズに合わせる */
+  height: 100%; /* 親要素のサイズに合わせる */
   border-radius: 50%;
   border: 4px solid #ccc;
   box-sizing: border-box;
-  transition: all 0.2s ease-in-out;
-  /* JavaScriptでサイズを変更するため、初期サイズをpxで指定 */
-  width: 100px; 
-  height: 100px;
 }
 
 .aperture-value {

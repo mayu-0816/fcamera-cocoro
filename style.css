@@ -56,7 +56,7 @@ body {
 /* 画面ごとのレイアウト調整 */
 #screen-fvalue-input {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto; /* 決定ボタンのために行を追加 */
   justify-items: center;
   align-items: center;
   height: 100%;
@@ -134,8 +134,18 @@ body {
 }
 
 #f-value-decide-btn {
-  grid-row: 3;
+  grid-row: 4; /* ボタンを4行目に配置 */
+  grid-column: 1 / -1; /* 全幅を占める */
   width: 100%;
+  padding: 15px 30px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-sizing: border-box;
   z-index: 3;
 }
 

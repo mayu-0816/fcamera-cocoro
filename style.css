@@ -21,7 +21,7 @@ body {
 /* スマホ画面のフレーム */
 .app-container {
   position: relative;
-  width: 375px; /* iPhone X/XS/11 Pro */
+  width: 375px;
   height: 812px;
   background: var(--bg-color);
   border-radius: 40px;
@@ -53,35 +53,48 @@ body {
   pointer-events: auto;
 }
 
-/* 画面ごとのレイアウト調整 */
+/* F値入力画面のグリッドレイアウト */
 #screen-fvalue-input {
+  display: grid;
+  grid-template-rows: auto 1fr auto; /* タイトル、円、説明文の3つの行 */
+  grid-template-areas:
+    "title"
+    "aperture"
+    "desc";
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.f-value-title-container {
+  grid-area: title;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 20px;
+}
+
+.aperture-control-container {
+  grid-area: aperture;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.description-text-container {
+  grid-area: desc;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  height: 100%;
-  width: 100%;
-  padding: 40px 20px;
-  box-sizing: border-box;
+  padding-bottom: 20px;
 }
 
 /* F値入力画面の各要素 */
 .f-value-title {
   font-size: 2rem;
   font-weight: 700;
-  margin-top: 20px;
-  margin-bottom: 20px;
   z-index: 3;
-}
-
-.aperture-control-container {
-  position: relative;
-  width: 100%;
-  flex-grow: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2;
 }
 
 .aperture-control {

@@ -16,17 +16,18 @@ body {
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  height: 100vh; /* 画面の高さを100%に設定 */
 }
 
 /* スマホ画面のフレーム */
 .app-container {
-  position: relative;
   width: 100%;
   max-width: 375px;
   height: 812px;
   background: var(--bg-color);
   border-radius: 40px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  position: relative;
   overflow: hidden;
 }
 

@@ -59,8 +59,10 @@ body {
   grid-template-rows: auto 1fr auto;
   justify-items: center;
   align-items: center;
+  height: 100%;
+  width: 100%;
   padding: 40px 20px;
-  position: relative;
+  box-sizing: border-box;
 }
 
 /* F値入力画面の各要素 */
@@ -68,10 +70,8 @@ body {
   grid-row: 1;
   font-size: 2rem;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin: 0;
   padding-top: 20px;
-  justify-self: center;
-  align-self: start;
   z-index: 3;
 }
 
@@ -83,6 +83,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1;
 }
 
 .aperture-control {
@@ -90,7 +91,6 @@ body {
   width: 200px;
   height: 200px;
   transition: all 0.2s ease-in-out;
-  z-index: 1;
 }
 
 .aperture-ring {
@@ -120,11 +120,9 @@ body {
 .description-text {
   grid-row: 3;
   width: 100%;
-  padding: 20px;
+  padding-bottom: 20px;
   box-sizing: border-box;
   text-align: center;
-  align-self: end;
-  justify-self: center;
   z-index: 3;
 }
 
@@ -138,9 +136,6 @@ body {
 #f-value-decide-btn {
   grid-row: 3;
   width: 100%;
-  margin-top: 20px;
-  align-self: end;
-  justify-self: center;
   z-index: 3;
 }
 

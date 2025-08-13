@@ -53,48 +53,30 @@ body {
   pointer-events: auto; /* 表示時はイベントを有効化 */
 }
 
-/* 各画面のコンテンツ */
-.screen .content {
-  max-width: 80%;
-  flex-grow: 1; /* 画面いっぱいに広がるように変更 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* 垂直方向の中央配置を維持 */
-  align-items: center;
-  text-align: center;
-}
+/* 画面ごとのレイアウト調整 */
 #screen-fvalue-input {
-  /* F値入力画面のみのレイアウト調整 */
-  justify-content: space-around; /* コンテンツと説明文を上下に配置 */
-}
-#screen-fvalue-input .content {
-  justify-content: center; /* 円の表示を中央に維持 */
-}
-
-#screen-intro h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1.5;
+  /* F値入力画面のみgridレイアウトに変更 */
+  display: grid;
+  grid-template-rows: 1fr auto 1fr; /* 上部・中央・下部に分割 */
+  justify-items: center;
+  align-items: center;
 }
 
-#screen-desc p {
-  font-size: 1.2rem;
-  line-height: 2;
-  color: #555;
-}
-
+/* F値入力画面の各要素 */
 .f-value-title {
+  grid-row: 1; /* gridの上部に配置 */
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 20px;
+  align-self: end; /* 垂直方向の下端に寄せる */
 }
 
-/* F値操作の円のスタイル */
 .aperture-control {
+  grid-row: 2; /* gridの中央に配置 */
   position: relative;
   width: 200px;
   height: 200px;
-  margin: 20px auto; /* 上下のマージンを調整 */
+  margin: 20px auto;
 }
 
 .aperture-ring {
@@ -114,12 +96,12 @@ body {
   font-weight: bold;
 }
 
-/* F値決定画面の下部テキストとボタン */
 .description-text {
+  grid-row: 3; /* gridの下部に配置 */
   width: 100%;
   padding: 20px;
   box-sizing: border-box;
-  flex-shrink: 0; /* 高さが固定されるように変更 */
+  align-self: start; /* 垂直方向の上端に寄せる */
 }
 
 .description-text p {

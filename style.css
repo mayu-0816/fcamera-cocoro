@@ -134,16 +134,17 @@ body {
 }
 
 #f-value-decide-btn {
-  grid-row: 4; /* ボタンを4行目に配置 */
-  grid-column: 1 / -1; /* 全幅を占める */
-  width: 100%;
+  grid-row: 4;
+  width: 200px; /* サイズを固定 */
+  margin: 0 auto; /* 中央寄せ */
   padding: 15px 30px;
   border-radius: 999px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  background: white;
-  border: 1px solid #ccc;
+  background: black; /* 色を黒に変更 */
+  color: white; /* テキストを白に変更 */
+  border: 1px solid black;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   box-sizing: border-box;
   z-index: 3;

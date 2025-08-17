@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 円の新しいサイズを計算
                 const currentSize = apertureControl.offsetWidth;
-                const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 0.5)); // 感度を調整
+                const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 1.0)); // 感度を調整
 
                 // F値も更新
                 const newFValue = sizeToFValue(newSize);

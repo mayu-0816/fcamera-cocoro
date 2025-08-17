@@ -22,24 +22,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // カメラを起動する関数
-    async function startCamera() {
+    function startCamera() {
         const video = document.getElementById('video');
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-            await video.play();
-            console.log("カメラが正常に起動しました。");
-        } catch (err) {
-            console.error("カメラへのアクセスが拒否されました: ", err);
-            alert("カメラを起動できませんでした。お使いのブラウザでカメラの使用を許可してください。");
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            return navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.play();
+                    console.log("カメラが正常に起動しました。");
+                })
+                .catch((err) => {
+                    console.error("カメラへのアクセスが拒否されました: ", err);
+                    alert("カメラを起動できませんでした。アクセスを許可してください。");
+                });
         }
+        return Promise.reject(new Error("getUserMediaがサポートされていません。"));
     }
 
     // フィルターを適用する関数
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
         
-        // F値に基づいてフィルターを適用するロジック
         if (fValue >= 1.2 && fValue < 5.6) {
             video.style.filter = 'saturate(1.5) contrast(1.2)';
         } else if (fValue >= 5.6 && fValue < 16.0) {
@@ -63,12 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // F値入力画面の「決定」ボタンへのクリックイベント
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');
     if (fValueDecideBtn) {
-        fValueDecideBtn.addEventListener('click', async (e) => {
+        fValueDecideBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const fValue = parseFloat(document.getElementById('aperture').value);
             showScreen('screen-camera');
-            await startCamera();
-            applyFilterWithFValue(fValue);
+            startCamera().then(() => {
+                applyFilterWithFValue(fValue);
+            });
         });
     }
 

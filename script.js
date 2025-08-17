@@ -88,8 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 画面クリックイベントの修正
-    // 各画面に個別のイベントリスナーを設定し、確実な画面遷移を実現
+    // --- 画面切り替えのイベントリスナーをシンプルに修正 ---
+    // 各画面要素に直接リスナーを設定
     if (screens.splash) {
         screens.splash.addEventListener('click', () => {
             showScreen('screen-introduction');
@@ -101,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('screen-fvalue-input');
         });
     }
+    // ---------------------------------------------------
 
     // F値入力画面の「決定」ボタンへのクリックイベント
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');

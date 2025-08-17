@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const constraints = {
             video: {
-                facingMode: { exact: facingMode }
+                facingMode: facingMode === 'environment' ? { exact: "environment" } : "user"
             }
         };
 
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error("カメラへのアクセスが拒否されました: ", err);
             // 外カメラで失敗した場合、内カメラを試みる
-            if (facingMode === 'environment' && err.name === 'OverconstrainedError') {
+            if (facingMode === 'environment' && (err.name === 'OverconstrainedError' || err.name === 'NotAllowedError')) {
                 console.log('外カメラの起動に失敗。内カメラを試行します。');
                 return startCamera('user');
             }
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("カメラを切り替えることができませんでした。");
         }
     }
-
+    
     // フィルターを適用する関数
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             applyFilterWithFValue(fValue);
         });
     }
-    
+
     // カメラ切り替えボタンへのクリックイベントリスナー
     const cameraSwitchBtn = document.getElementById('camera-switch-btn');
     if (cameraSwitchBtn) {

@@ -21,22 +21,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    let currentStream = null;
+    let isFrontCamera = false;
+
     // カメラを起動する関数
-    function startCamera() {
+    async function startCamera(facingMode = 'environment') {
         const video = document.getElementById('video');
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            return navigator.mediaDevices.getUserMedia({ video: true })
-                .then((stream) => {
-                    video.srcObject = stream;
-                    video.play();
-                    console.log("カメラが正常に起動しました。");
-                })
-                .catch((err) => {
-                    console.error("カメラへのアクセスが拒否されました: ", err);
-                    alert("カメラを起動できませんでした。アクセスを許可してください。");
-                });
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
         }
-        return Promise.reject(new Error("getUserMediaがサポートされていません。"));
+
+        const constraints = {
+            video: {
+                facingMode: { exact: facingMode }
+            }
+        };
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            currentStream = stream;
+            isFrontCamera = (facingMode === 'user');
+        } catch (err) {
+            console.error("カメラへのアクセスが拒否されました: ", err);
+            // 外カメラで失敗した場合、内カメラを試みる
+            if (facingMode === 'environment' && err.name === 'OverconstrainedError') {
+                console.log('外カメラの起動に失敗。内カメラを試行します。');
+                return startCamera('user');
+            }
+            alert("カメラを起動できませんでした。アクセスを許可してください。");
+        }
+    }
+
+    // カメラを切り替える関数
+    async function switchCamera() {
+        const video = document.getElementById('video');
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+
+        const newFacingMode = isFrontCamera ? 'environment' : 'user';
+        const constraints = {
+            video: {
+                facingMode: newFacingMode
+            }
+        };
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            currentStream = stream;
+            isFrontCamera = !isFrontCamera;
+        } catch (err) {
+            console.error("カメラの切り替えに失敗しました: ", err);
+            alert("カメラを切り替えることができませんでした。");
+        }
     }
 
     // フィルターを適用する関数
@@ -66,13 +105,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // F値入力画面の「決定」ボタンへのクリックイベント
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');
     if (fValueDecideBtn) {
-        fValueDecideBtn.addEventListener('click', (e) => {
+        fValueDecideBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const fValue = parseFloat(document.getElementById('aperture').value);
             showScreen('screen-camera');
-            startCamera().then(() => {
-                applyFilterWithFValue(fValue);
-            });
+            await startCamera('environment'); // ここで外カメラを優先して起動
+            applyFilterWithFValue(fValue);
+        });
+    }
+    
+    // カメラ切り替えボタンへのクリックイベントリスナー
+    const cameraSwitchBtn = document.getElementById('camera-switch-btn');
+    if (cameraSwitchBtn) {
+        cameraSwitchBtn.addEventListener('click', () => {
+            switchCamera();
         });
     }
 

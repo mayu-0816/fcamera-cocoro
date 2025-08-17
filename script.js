@@ -47,30 +47,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const apertureInput = document.getElementById('aperture');
 
     let lastDistance = null;
-    let initialFValue = 1.2;
     const minFValue = 1.2;
     const maxFValue = 32.0;
 
     // F値と円のサイズのマッピング
-    const minSize = 300; // 最小F値（1.2）に対応する円のサイズ
+    const minSize = 250; // 最小F値（1.2）に対応する円のサイズ
     const maxSize = 100; // 最大F値（32.0）に対応する円のサイズ
+    const sizeRange = minSize - maxSize;
 
     // F値を円のサイズに変換する関数
     function fValueToSize(fValue) {
         const fValueRange = maxFValue - minFValue;
-        const sizeRange = minSize - maxSize; // 範囲を逆に計算
         return minSize - ((fValue - minFValue) / fValueRange) * sizeRange;
     }
 
     // 円のサイズをF値に変換する関数
     function sizeToFValue(size) {
         const fValueRange = maxFValue - minFValue;
-        const sizeRange = minSize - maxSize; // 範囲を逆に計算
-        return minFValue + ((minSize - size) / sizeRange) * fValueRange;
+        const normalizedSize = (minSize - size) / sizeRange;
+        return minFValue + (normalizedSize * fValueRange);
     }
 
     if (apertureControl && fValueDisplay && apertureInput) {
-        // 初期状態を設定
+        // 初期状態をF32.0に設定
+        const initialFValue = 32.0;
         const initialSize = fValueToSize(initialFValue);
         apertureControl.style.width = `${initialSize}px`;
         apertureControl.style.height = `${initialSize}px`;
@@ -86,13 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
         apertureControl.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2) {
                 e.preventDefault(); // 画面全体の動きを無効化
+
                 const currentDistance = getDistance(e.touches[0], e.touches[1]);
                 if (lastDistance) {
                     const delta = currentDistance - lastDistance; // 指の距離の変化量
 
                     // 円の新しいサイズを計算
                     const currentSize = apertureControl.offsetWidth;
-                    const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 1)); // 1は感度
+                    const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 0.5)); // 感度を調整
 
                     // F値も更新
                     const newFValue = sizeToFValue(newSize);

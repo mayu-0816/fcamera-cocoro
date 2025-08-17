@@ -24,11 +24,10 @@ body {
 /* スマホ画面のフレーム */
 .app-container {
     width: 100%;
-    max-width: 375px;
-    height: 812px;
+    height: 100%;
     background: var(--bg-color);
-    border-radius: 40px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border-radius: 0;
+    box-shadow: none;
     position: relative;
     overflow: hidden;
 }
@@ -56,21 +55,18 @@ body {
     pointer-events: auto;
 }
 
-/* F値入力画面のグリッドレイアウト */
+/* F値入力画面のレイアウト修正 */
 #screen-fvalue-input {
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas:
-        "title"
-        "aperture"
-        "desc";
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     height: 100%;
     width: 100%;
     padding: 20px;
 }
 
 .f-value-title-container {
-    grid-area: title;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -78,14 +74,13 @@ body {
 }
 
 .aperture-control-container {
-    grid-area: aperture;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex: 1; /* 画面中央に配置するため、Flexboxの要素として柔軟にサイズを調整 */
 }
 
 .description-text-container {
-    grid-area: desc;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -165,8 +160,8 @@ body {
 /* カメラ画面 */
 #screen-camera {
     background-color: #000;
-    justify-content: flex-start;
-    padding-top: 50px;
+    justify-content: center; /* 中央揃えに修正 */
+    align-items: center; /* 中央揃えに修正 */
 }
 
 #video {

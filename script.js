@@ -40,12 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
-            video.play(); // カメラのストリームを再生
+            video.play();
             currentStream = stream;
             isFrontCamera = (facingMode === 'user');
         } catch (err) {
             console.error("カメラへのアクセスが拒否されました: ", err);
-            // 外カメラで失敗した場合、内カメラを試みる
             if (facingMode === 'environment' && (err.name === 'OverconstrainedError' || err.name === 'NotAllowedError')) {
                 console.log('外カメラの起動に失敗。内カメラを試行します。');
                 return startCamera('user');
@@ -71,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
-            video.play(); // カメラのストリームを再生
+            video.play();
             currentStream = stream;
             isFrontCamera = !isFrontCamera;
         } catch (err) {
@@ -158,7 +157,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.body.addEventListener('touchstart', (e) => {
+        const fValueScreen = document.getElementById('screen-fvalue-input');
+        if (!fValueScreen || !fValueScreen.classList.contains('active')) {
+            return;
+        }
+
         if (e.touches.length === 2) {
+            e.preventDefault();
             lastDistance = getDistance(e.touches[0], e.touches[1]);
         }
     }, { passive: false });

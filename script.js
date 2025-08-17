@@ -49,8 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('外カメラの起動に失敗。内カメラを試行します。');
                 return startCamera('user');
             }
-            // カスタムアラートを表示する関数
-            showAlert("カメラを起動できませんでした。アクセスを許可してください。");
+            alert("カメラを起動できませんでした。アクセスを許可してください。");
         }
     }
 
@@ -76,15 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
             isFrontCamera = !isFrontCamera;
         } catch (err) {
             console.error("カメラの切り替えに失敗しました: ", err);
-            // カスタムアラートを表示する関数
-            showAlert("カメラを切り替えることができませんでした。");
+            alert("カメラを切り替えることができませんでした。");
         }
     }
-
+    
     // フィルターを適用する関数
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
-
+        
         if (fValue >= 1.2 && fValue < 5.6) {
             video.style.filter = 'saturate(1.5) contrast(1.2)';
         } else if (fValue >= 5.6 && fValue < 16.0) {
@@ -93,34 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
             video.style.filter = 'grayscale(100%)';
         }
     }
-    
-    // カスタムアラート機能
-    function showAlert(message) {
-        // すでにアラートが存在する場合は何もしない
-        if (document.getElementById('custom-alert-box')) return;
 
-        const alertBox = document.createElement('div');
-        alertBox.id = 'custom-alert-box';
-        alertBox.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            z-index: 1000;
-        `;
-        alertBox.innerHTML = `
-            <p>${message}</p>
-            <button onclick="document.getElementById('custom-alert-box').remove()">OK</button>
-        `;
-        document.body.appendChild(alertBox);
-    }
-    
     // スプラッシュ画面と導入画面へのクリックイベントリスナー
+    // イベント伝播の問題を回避するため、直接イベントリスナーを設定
     if (screens.splash) {
         screens.splash.addEventListener('click', () => {
             showScreen('screen-introduction');
@@ -136,8 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // F値入力画面の「決定」ボタンへのクリックイベント
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');
     if (fValueDecideBtn) {
-        fValueDecideBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
+        fValueDecideBtn.addEventListener('click', async () => {
             const fValue = parseFloat(document.getElementById('aperture').value);
             showScreen('screen-camera');
             await startCamera('environment');

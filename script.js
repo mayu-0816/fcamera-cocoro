@@ -45,48 +45,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const apertureControl = document.querySelector('.aperture-control');
     const fValueDisplay = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
+
     let lastDistance = null;
-    let initialSize = 200; // 円の初期サイズを定義
+    let initialFValue = 1.2;
+    const minFValue = 1.2;
+    const maxFValue = 32.0;
+
+    // F値と円のサイズのマッピング
+    const minSize = 300; // 最小F値（1.2）に対応する円のサイズ
+    const maxSize = 100; // 最大F値（32.0）に対応する円のサイズ
+
+    // F値を円のサイズに変換する関数
+    function fValueToSize(fValue) {
+        const fValueRange = maxFValue - minFValue;
+        const sizeRange = minSize - maxSize; // 範囲を逆に計算
+        return minSize - ((fValue - minFValue) / fValueRange) * sizeRange;
+    }
+
+    // 円のサイズをF値に変換する関数
+    function sizeToFValue(size) {
+        const fValueRange = maxFValue - minFValue;
+        const sizeRange = minSize - maxSize; // 範囲を逆に計算
+        return minFValue + ((minSize - size) / sizeRange) * fValueRange;
+    }
 
     if (apertureControl && fValueDisplay && apertureInput) {
+        // 初期状態を設定
+        const initialSize = fValueToSize(initialFValue);
+        apertureControl.style.width = `${initialSize}px`;
+        apertureControl.style.height = `${initialSize}px`;
+        fValueDisplay.textContent = initialFValue.toFixed(1);
+        apertureInput.value = initialFValue.toFixed(1);
+
         apertureControl.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
-                // 2本の指がタッチした瞬間の距離を記録
                 lastDistance = getDistance(e.touches[0], e.touches[1]);
             }
         }, { passive: false });
 
         apertureControl.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2) {
-                e.preventDefault(); // デフォルトのスクロール動作を無効化
-
+                e.preventDefault(); // 画面全体の動きを無効化
                 const currentDistance = getDistance(e.touches[0], e.touches[1]);
                 if (lastDistance) {
                     const delta = currentDistance - lastDistance; // 指の距離の変化量
 
                     // 円の新しいサイズを計算
                     const currentSize = apertureControl.offsetWidth;
-                    const newSize = Math.max(100, Math.min(300, currentSize + delta));
-                    
-                    // サイズを直接CSSに適用
+                    const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 1)); // 1は感度
+
+                    // F値も更新
+                    const newFValue = sizeToFValue(newSize);
+
+                    // サイズとF値の表示を更新
                     apertureControl.style.width = `${newSize}px`;
                     apertureControl.style.height = `${newSize}px`;
-
-                    // サイズの変化に応じてF値を更新
-                    const fValueRange = 32.0 - 1.2;
-                    const sizeRange = 300 - 100;
-                    const fValue = 1.2 + (fValueRange * (newSize - 100) / sizeRange);
-                    
-                    // F値の表示とinputの値を更新
-                    fValueDisplay.textContent = fValue.toFixed(1);
-                    apertureInput.value = fValue.toFixed(1);
+                    fValueDisplay.textContent = newFValue.toFixed(1);
+                    apertureInput.value = newFValue.toFixed(1);
                 }
-                lastDistance = currentDistance; // 最後の距離を更新
+                lastDistance = currentDistance;
             }
         }, { passive: false });
 
         apertureControl.addEventListener('touchend', () => {
-            lastDistance = null; // タッチ終了時にリセット
+            lastDistance = null;
         });
 
         // 2点間の距離を計算するヘルパー関数

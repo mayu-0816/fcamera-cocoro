@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
+            video.play(); // カメラのストリームを再生
             currentStream = stream;
             isFrontCamera = (facingMode === 'user');
         } catch (err) {
@@ -70,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
+            video.play(); // カメラのストリームを再生
             currentStream = stream;
             isFrontCamera = !isFrontCamera;
         } catch (err) {
@@ -109,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             const fValue = parseFloat(document.getElementById('aperture').value);
             showScreen('screen-camera');
-            await startCamera('environment'); // ここで外カメラを優先して起動
+            await startCamera('environment');
             applyFilterWithFValue(fValue);
         });
     }

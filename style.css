@@ -56,12 +56,11 @@ body {
     pointer-events: auto;
 }
 
-/* F値入力画面のレイアウト修正 (Gridに変更) */
+/* F値入力画面のレイアウト修正 (Flexboxに戻して再調整) */
 #screen-fvalue-input {
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    grid-template-columns: 1fr;
-    justify-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
     height: 100%;
     width: 100%;
@@ -69,21 +68,22 @@ body {
 }
 
 .f-value-title-container {
-    grid-row: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     padding-top: 20px;
 }
 
 .aperture-control-container {
-    grid-row: 2;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex: 1;
     width: 100%;
     height: 100%;
 }
 
 .description-text-container {
-    grid-row: 3;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;

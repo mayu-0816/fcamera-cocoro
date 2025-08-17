@@ -84,9 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
 
         apertureControl.addEventListener('touchmove', (e) => {
+            // 修正箇所: ここで常にpreventDefaultを呼び出す
+            e.preventDefault(); 
             if (e.touches.length === 2) {
-                e.preventDefault(); // 画面全体の動きを無効化
-
                 const currentDistance = getDistance(e.touches[0], e.touches[1]);
                 if (lastDistance) {
                     const delta = currentDistance - lastDistance; // 指の距離の変化量

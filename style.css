@@ -26,6 +26,8 @@ body {
 .app-container {
     width: 100%;
     height: 100%;
+    max-width: 375px; /* 最大幅を指定 */
+    max-height: 812px; /* 最大高さを指定 */
     background: #fff;
     position: relative;
     overflow: hidden;

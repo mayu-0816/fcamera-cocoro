@@ -24,8 +24,10 @@ body {
 
 /* スマホ画面のフレーム */
 .app-container {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
+    max-width: 375px; /* 最大幅を指定して、PC表示での見栄えを良くする */
+    max-height: 812px; /* 最大高さを指定 */
     background: #fff; /* 背景色を白に変更 */
     border-radius: 0;
     box-shadow: none;

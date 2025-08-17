@@ -3,6 +3,7 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100%;
+    width: 100%;
 }
 
 * {
@@ -10,8 +11,8 @@ html, body {
 }
 
 body {
-    font-family: var(--font-family);
-    background-color: var(--phone-frame-color);
+    font-family: sans-serif; /* Fallback font */
+    background-color: #f0f0f0; /* 見やすい色に調整 */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -23,9 +24,9 @@ body {
 
 /* スマホ画面のフレーム */
 .app-container {
-    width: 100%;
-    height: 100%;
-    background: var(--bg-color);
+    width: 100vw;
+    height: 100vh;
+    background: #fff; /* 背景色を白に変更 */
     border-radius: 0;
     box-shadow: none;
     position: relative;

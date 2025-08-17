@@ -26,8 +26,8 @@ body {
 .app-container {
     width: 100%;
     height: 100%;
-    max-width: 375px; /* 最大幅を指定 */
-    max-height: 812px; /* 最大高さを指定 */
+    max-width: 375px;
+    max-height: 812px;
     background: #fff;
     position: relative;
     overflow: hidden;
@@ -56,11 +56,12 @@ body {
     pointer-events: auto;
 }
 
-/* F値入力画面のレイアウト修正 */
+/* F値入力画面のレイアウト修正 (Gridに変更) */
 #screen-fvalue-input {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr;
+    justify-items: center;
     align-items: center;
     height: 100%;
     width: 100%;
@@ -68,20 +69,21 @@ body {
 }
 
 .f-value-title-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    grid-row: 1;
     padding-top: 20px;
 }
 
 .aperture-control-container {
+    grid-row: 2;
     display: flex;
     justify-content: center;
     align-items: center;
-    flex: 1;
+    width: 100%;
+    height: 100%;
 }
 
 .description-text-container {
+    grid-row: 3;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;

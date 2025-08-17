@@ -45,10 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
             isFrontCamera = (facingMode === 'user');
         } catch (err) {
             console.error("カメラへのアクセスが拒否されました: ", err);
-            if (facingMode === 'environment' && (err.name === 'OverconstrainedError' || err.name === 'NotAllowedError')) {
-                console.log('外カメラの起動に失敗。内カメラを試行します。');
-                return startCamera('user');
-            }
             alert("カメラを起動できませんでした。アクセスを許可してください。");
         }
     }
@@ -78,11 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("カメラを切り替えることができませんでした。");
         }
     }
-    
+
     // フィルターを適用する関数
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
-        
+
         if (fValue >= 1.2 && fValue < 5.6) {
             video.style.filter = 'saturate(1.5) contrast(1.2)';
         } else if (fValue >= 5.6 && fValue < 16.0) {
@@ -92,8 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // スプラッシュ画面と導入画面へのクリックイベントリスナー
-    // イベント伝播の問題を回避するため、直接イベントリスナーを設定
+    // 画面クリックイベントの修正
+    // 各画面に個別のイベントリスナーを設定し、確実な画面遷移を実現
     if (screens.splash) {
         screens.splash.addEventListener('click', () => {
             showScreen('screen-introduction');
@@ -147,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const normalizedSize = (minSize - size) / sizeRange;
         return minFValue + (normalizedSize * fValueRange);
     }
-    
+
     if (fValueDisplay && apertureInput) {
         const initialFValue = 32.0;
         const initialSize = fValueToSize(initialFValue);
@@ -180,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const currentDistance = getDistance(e.touches[0], e.touches[1]);
             const apertureControl = document.querySelector('.aperture-control');
-            
+
             if (lastDistance && apertureControl) {
                 const delta = currentDistance - lastDistance;
                 const currentSize = apertureControl.offsetWidth;

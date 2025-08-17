@@ -9,6 +9,15 @@ html, body {
     box-sizing: border-box;
 }
 
+#screen-camera #video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 画面に合わせてビデオを拡大・表示する */
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 body {
     font-family: sans-serif;
     background-color: #f0f0f0;
@@ -226,4 +235,5 @@ body {
     justify-content: center;
     align-items: center;
 }
+
 

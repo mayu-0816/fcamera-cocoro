@@ -74,11 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("カメラを切り替えることができませんでした。");
         }
     }
-
+    
     // フィルターを適用する関数
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
-
+        
         if (fValue >= 1.2 && fValue < 5.6) {
             video.style.filter = 'saturate(1.5) contrast(1.2)';
         } else if (fValue >= 5.6 && fValue < 16.0) {
@@ -87,8 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
             video.style.filter = 'grayscale(100%)';
         }
     }
-
-    // --- 画面切り替えのイベントリスナーをシンプルに修正 ---
+    
+    // --- 画面切り替えのイベントリスナーを修正 ---
     // 各画面要素に直接リスナーを設定
     if (screens.splash) {
         screens.splash.addEventListener('click', () => {
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('screen-fvalue-input');
         });
     }
-    // ---------------------------------------------------
+    // ------------------------------------------
 
     // F値入力画面の「決定」ボタンへのクリックイベント
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const normalizedSize = (minSize - size) / sizeRange;
         return minFValue + (normalizedSize * fValueRange);
     }
-
+    
     if (fValueDisplay && apertureInput) {
         const initialFValue = 32.0;
         const initialSize = fValueToSize(initialFValue);
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const currentDistance = getDistance(e.touches[0], e.touches[1]);
             const apertureControl = document.querySelector('.aperture-control');
-
+            
             if (lastDistance && apertureControl) {
                 const delta = currentDistance - lastDistance;
                 const currentSize = apertureControl.offsetWidth;

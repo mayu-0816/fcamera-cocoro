@@ -21,6 +21,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // カメラを起動する関数
+    function startCamera() {
+        const video = document.getElementById('video');
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch((err) => {
+                    console.error("カメラへのアクセスが拒否されました: ", err);
+                    alert("カメラを起動できませんでした。アクセスを許可してください。");
+                });
+        }
+    }
+
+    // フィルターを適用する関数
+    function applyFilterWithFValue(fValue) {
+        const video = document.getElementById('video');
+        
+        // F値に基づいてフィルターを適用するロジック
+        if (fValue >= 1.2 && fValue < 5.6) {
+            // F1.2 - F5.6: 開放感のあるフィルター（彩度高めなど）
+            video.style.filter = 'saturate(1.5) contrast(1.2)';
+        } else if (fValue >= 5.6 && fValue < 16.0) {
+            // F5.6 - F16.0: 標準的なフィルター
+            video.style.filter = 'none';
+        } else {
+            // F16.0 - F32.0: 絞り込んだフィルター（グレースケールなど）
+            video.style.filter = 'grayscale(100%)';
+        }
+    }
+
     // スプラッシュ画面と導入画面へのクリックイベントリスナー
     document.body.addEventListener('click', (e) => {
         const activeScreen = document.querySelector('.screen.active');
@@ -37,7 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fValueDecideBtn) {
         fValueDecideBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            const fValue = parseFloat(document.getElementById('aperture').value);
             showScreen('screen-camera');
+            startCamera();
+            applyFilterWithFValue(fValue);
         });
     }
 
@@ -49,18 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const minFValue = 1.2;
     const maxFValue = 32.0;
 
-    // F値と円のサイズのマッピング
-    const minSize = 250; // 最小F値（1.2）に対応する円のサイズ
-    const maxSize = 100; // 最大F値（32.0）に対応する円のサイズ
+    const minSize = 250;
+    const maxSize = 100;
     const sizeRange = minSize - maxSize;
-    
-    // F値を円のサイズに変換する関数
+
     function fValueToSize(fValue) {
         const fValueRange = maxFValue - minFValue;
         return minSize - ((fValue - minFValue) / fValueRange) * sizeRange;
     }
 
-    // 円のサイズをF値に変換する関数
     function sizeToFValue(size) {
         const fValueRange = maxFValue - minFValue;
         const normalizedSize = (minSize - size) / sizeRange;
@@ -68,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (fValueDisplay && apertureInput) {
-        // 初期状態をF32.0に設定
         const initialFValue = 32.0;
         const initialSize = fValueToSize(initialFValue);
         const apertureControl = document.querySelector('.aperture-control');
@@ -78,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         apertureInput.value = initialFValue.toFixed(1);
     }
 
-    // ピンチジェスチャーのイベントリスナーをbody全体に設定
     document.body.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
             lastDistance = getDistance(e.touches[0], e.touches[1]);
@@ -86,28 +117,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
 
     document.body.addEventListener('touchmove', (e) => {
-        // F値画面がアクティブな時のみ処理を行う
         const fValueScreen = document.getElementById('screen-fvalue-input');
         if (!fValueScreen || !fValueScreen.classList.contains('active')) {
             return;
         }
 
         if (e.touches.length === 2) {
-            e.preventDefault(); // 画面全体の動きを無効化
+            e.preventDefault();
             const currentDistance = getDistance(e.touches[0], e.touches[1]);
             const apertureControl = document.querySelector('.aperture-control');
             
             if (lastDistance && apertureControl) {
-                const delta = currentDistance - lastDistance; // 指の距離の変化量
-
-                // 円の新しいサイズを計算
+                const delta = currentDistance - lastDistance;
                 const currentSize = apertureControl.offsetWidth;
-                const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 1.0)); // 感度を調整
+                const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 1.0));
 
-                // F値も更新
                 const newFValue = sizeToFValue(newSize);
 
-                // サイズとF値の表示を更新
                 apertureControl.style.width = `${newSize}px`;
                 apertureControl.style.height = `${newSize}px`;
                 fValueDisplay.textContent = newFValue.toFixed(1);
@@ -121,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
         lastDistance = null;
     });
 
-    // 2点間の距離を計算するヘルパー関数
     function getDistance(touch1, touch2) {
         const dx = touch1.pageX - touch2.pageX;
         const dy = touch1.pageY - touch2.pageY;

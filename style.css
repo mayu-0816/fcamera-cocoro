@@ -13,9 +13,8 @@ html, body {
 body {
     font-family: sans-serif;
     background-color: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: grid;
+    place-items: center;
     overflow: hidden;
     height: 100vh;
     touch-action: pan-y;
@@ -56,7 +55,7 @@ body {
     pointer-events: auto;
 }
 
-/* F値入力画面のレイアウト修正 (Flexboxに戻して再調整) */
+/* F値入力画面のレイアウト */
 #screen-fvalue-input {
     display: flex;
     flex-direction: column;

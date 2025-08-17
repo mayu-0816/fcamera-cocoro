@@ -11,8 +11,8 @@ html, body {
 }
 
 body {
-    font-family: sans-serif; /* Fallback font */
-    background-color: #f0f0f0; /* 見やすい色に調整 */
+    font-family: sans-serif;
+    background-color: #f0f0f0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -26,11 +26,7 @@ body {
 .app-container {
     width: 100%;
     height: 100%;
-    max-width: 375px; /* 最大幅を指定して、PC表示での見栄えを良くする */
-    max-height: 812px; /* 最大高さを指定 */
-    background: #fff; /* 背景色を白に変更 */
-    border-radius: 0;
-    box-shadow: none;
+    background: #fff;
     position: relative;
     overflow: hidden;
 }
@@ -80,7 +76,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    flex: 1; /* 画面中央に配置するため、Flexboxの要素として柔軟にサイズを調整 */
+    flex: 1;
 }
 
 .description-text-container {
@@ -163,8 +159,8 @@ body {
 /* カメラ画面 */
 #screen-camera {
     background-color: #000;
-    justify-content: center; /* 中央揃えに修正 */
-    align-items: center; /* 中央揃えに修正 */
+    justify-content: center;
+    align-items: center;
 }
 
 #video {

@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('外カメラの起動に失敗。内カメラを試行します。');
                 return startCamera('user');
             }
-            alert("カメラを起動できませんでした。アクセスを許可してください。");
+            // カスタムアラートを表示する関数
+            showAlert("カメラを起動できませんでした。アクセスを許可してください。");
         }
     }
 
@@ -75,14 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
             isFrontCamera = !isFrontCamera;
         } catch (err) {
             console.error("カメラの切り替えに失敗しました: ", err);
-            alert("カメラを切り替えることができませんでした。");
+            // カスタムアラートを表示する関数
+            showAlert("カメラを切り替えることができませんでした。");
         }
     }
-    
+
     // フィルターを適用する関数
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
-        
+
         if (fValue >= 1.2 && fValue < 5.6) {
             video.style.filter = 'saturate(1.5) contrast(1.2)';
         } else if (fValue >= 5.6 && fValue < 16.0) {
@@ -91,17 +93,45 @@ document.addEventListener('DOMContentLoaded', () => {
             video.style.filter = 'grayscale(100%)';
         }
     }
+    
+    // カスタムアラート機能
+    function showAlert(message) {
+        // すでにアラートが存在する場合は何もしない
+        if (document.getElementById('custom-alert-box')) return;
 
+        const alertBox = document.createElement('div');
+        alertBox.id = 'custom-alert-box';
+        alertBox.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            z-index: 1000;
+        `;
+        alertBox.innerHTML = `
+            <p>${message}</p>
+            <button onclick="document.getElementById('custom-alert-box').remove()">OK</button>
+        `;
+        document.body.appendChild(alertBox);
+    }
+    
     // スプラッシュ画面と導入画面へのクリックイベントリスナー
-    document.body.addEventListener('click', (e) => {
-        const activeScreen = document.querySelector('.screen.active');
-        if (activeScreen) {
-            const nextScreenId = activeScreen.dataset.nextScreen;
-            if (nextScreenId) {
-                showScreen(nextScreenId);
-            }
-        }
-    });
+    if (screens.splash) {
+        screens.splash.addEventListener('click', () => {
+            showScreen('screen-introduction');
+        });
+    }
+
+    if (screens.introduction) {
+        screens.introduction.addEventListener('click', () => {
+            showScreen('screen-fvalue-input');
+        });
+    }
 
     // F値入力画面の「決定」ボタンへのクリックイベント
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');

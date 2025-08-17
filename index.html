@@ -1,54 +1,56 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>こころのF値</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="/icon/icon-192x192.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>こころのF値</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="/icon/icon-192x192.png">
 </head>
 <body>
-    <div class="app-container">
-        <div id="screen-splash" class="screen active" data-next-screen="screen-introduction">
-            <p>わたしたちは<br>utsuRe です</p>
-        </div>
+    <div class="app-container">
+        <div id="screen-splash" class="screen active" data-next-screen="screen-introduction">
+            <p>わたしたちは<br>utsuRe です</p>
+        </div>
 
-        <div id="screen-introduction" class="screen" data-next-screen="screen-fvalue-input">
-            <p>わたしたちはカメラの可能性を信じ<br>カメラと人との交流による<br>カメラの新たな価値を<br>さがしています</p>
-        </div>
+        <div id="screen-introduction" class="screen" data-next-screen="screen-fvalue-input">
+            <p>わたしたちはカメラの可能性を信じ<br>カメラと人との交流による<br>カメラの新たな価値を<br>さがしています</p>
+        </div>
 
-        <div id="screen-fvalue-input" class="screen">
-            <div class="f-value-title-container">
-                <p class="f-value-title">こころのF値</p>
-            </div>
-            <div class="aperture-control-container">
-                <div class="aperture-control">
-                    <div class="aperture-ring"></div>
-                    <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
-                    <input type="hidden" id="aperture" value="1.2">
+        <div id="screen-fvalue-input" class="screen">
+            <div class="f-value-title-container">
+                <p class="f-value-title">こころのF値</p>
+            </div>
+            <div class="aperture-control-container">
+                <div class="aperture-control">
+                    <div class="aperture-ring"></div>
+                    <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
+                    <input type="hidden" id="aperture" value="1.2">
+                </div>
+            </div>
+            <div class="description-text-container">
+                <div class="description-text">
+                    <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
+                </div>
+                <button id="f-value-decide-btn" class="btn">決定</button>
+            </div>
+        </div>
+
+        <div id="screen-camera" class="screen">
+            <video id="video" playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="camera-ui">
+                <div class="camera-ui-top">
+                    <p class="bpm-label">BPM: <span id="bpm-display">--</span></p>
                 </div>
-            </div>
-            <div class="description-text-container">
-                <div class="description-text">
-                    <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
+                <div class="camera-ui-bottom">
+                    <button id="camera-switch-btn" class="camera-btn">⇄</button>
+                    <button id="camera-shutter-btn" class="camera-btn">撮影</button>
                 </div>
-                <button id="f-value-decide-btn" class="btn">決定</button>
-            </div>
-        </div>
-
-        <div id="screen-camera" class="screen">
-            <video id="video" playsinline></video>
-            <canvas id="canvas"></canvas>
-            <div class="camera-ui">
-                <p class="bpm-label">BPM: <span id="bpm-display">--</span></p>
-                <button class="btn">撮影</button>
-            </div>
-        </div>
-    </div>
-    <script src="script.js"></script>
-    <button id="camera-switch-btn">⇄</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
-
-

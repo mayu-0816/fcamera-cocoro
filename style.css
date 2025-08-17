@@ -13,13 +13,11 @@ html, body {
 body {
     font-family: sans-serif;
     background-color: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     overflow: hidden;
     height: 100vh;
     touch-action: pan-y;
     overscroll-behavior-y: none;
+    position: relative; /* 子要素のabsolute配置の基準にする */
 }
 
 /* スマホ画面のフレーム */
@@ -29,16 +27,11 @@ body {
     max-width: 375px;
     max-height: 812px;
     background: #fff;
-    position: relative;
+    position: absolute; /* 親要素（body）を基準に配置 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 中央揃えのテクニック */
     overflow: hidden;
-    /* この部分を削除
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    margin: auto;
-    */
 }
 
 /* 各画面の基本スタイル */

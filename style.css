@@ -13,11 +13,13 @@ html, body {
 body {
     font-family: sans-serif;
     background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     overflow: hidden;
     height: 100vh;
     touch-action: pan-y;
     overscroll-behavior-y: none;
-    position: relative; /* 子要素のabsolute配置の基準にする */
 }
 
 /* スマホ画面のフレーム */
@@ -27,10 +29,7 @@ body {
     max-width: 375px;
     max-height: 812px;
     background: #fff;
-    position: absolute; /* 親要素（body）を基準に配置 */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* 中央揃えのテクニック */
+    position: relative;
     overflow: hidden;
 }
 
@@ -57,7 +56,7 @@ body {
     pointer-events: auto;
 }
 
-/* F値入力画面のレイアウト */
+/* F値入力画面のレイアウト修正 (Flexboxに戻して再調整) */
 #screen-fvalue-input {
     display: flex;
     flex-direction: column;

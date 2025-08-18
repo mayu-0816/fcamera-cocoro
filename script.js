@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- 画面要素 ---
     const screens = {
         splash: document.getElementById('screen-splash'),
         introduction: document.getElementById('screen-introduction'),
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isFrontCamera = false;
     let selectedFValue = null;
 
-    // --- カメラ起動 ---
     async function startCamera(facingMode = 'environment') {
         const video = document.getElementById('video');
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
@@ -33,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- フィルター適用 ---
     function applyFilter(fValue) {
         const video = document.getElementById('video');
         if (fValue >= 1.2 && fValue < 5.6) video.style.filter = 'saturate(1.5) contrast(1.2)';
@@ -41,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
         else video.style.filter = 'brightness(0.9) contrast(1.1)';
     }
 
-    // --- 画面切替イベント ---
     document.getElementById('splash-next-btn')?.addEventListener('click', () => showScreen('introduction'));
     screens.introduction?.addEventListener('click', () => showScreen('fvalue'));
 
@@ -60,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedFValue !== null) applyFilter(selectedFValue);
     });
 
-    // --- F値ピンチ操作 ---
     const apertureControl = document.querySelector('.aperture-control');
     const fValueDisplay = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
@@ -102,9 +97,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('touchend', () => lastDistance = null);
 
-    // --- 撮影機能 ---
+    // --- 撮影機能 + ギャラリー表示 ---
     const canvas = document.getElementById('canvas');
+    const video = document.getElementById('video');
     const cameraShutterBtn = document.getElementById('camera-shutter-btn');
+
+    // ギャラリーコンテナを追加
+    let galleryContainer = document.getElementById('camera-gallery');
+    if (!galleryContainer) {
+        galleryContainer = document.createElement('div');
+        galleryContainer.id = 'camera-gallery';
+        galleryContainer.style.position = 'absolute';
+        galleryContainer.style.bottom = '20px';
+        galleryContainer.style.left = '50%';
+        galleryContainer.style.transform = 'translateX(-50%)';
+        galleryContainer.style.display = 'flex';
+        galleryContainer.style.gap = '10px';
+        galleryContainer.style.maxWidth = '90%';
+        galleryContainer.style.overflowX = 'auto';
+        galleryContainer.style.zIndex = '10';
+        screens.camera.appendChild(galleryContainer);
+    }
 
     cameraShutterBtn?.addEventListener('click', () => {
         if (!video.srcObject) return;
@@ -116,28 +129,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const imageDataURL = canvas.toDataURL('image/png');
 
-        // プレビュー表示
-        let previewImg = document.getElementById('camera-preview');
-        if (!previewImg) {
-            previewImg = document.createElement('img');
-            previewImg.id = 'camera-preview';
-            previewImg.style.position = 'absolute';
-            previewImg.style.top = '10px';
-            previewImg.style.left = '10px';
-            previewImg.style.width = '100px';
-            previewImg.style.border = '2px solid white';
-            previewImg.style.zIndex = 10;
-            screens.camera.appendChild(previewImg);
-        }
-        previewImg.src = imageDataURL;
+        // ギャラリーに追加
+        const img = document.createElement('img');
+        img.src = imageDataURL;
+        img.style.width = '80px';
+        img.style.border = '2px solid white';
+        img.style.cursor = 'pointer';
+        img.addEventListener('click', () => window.open(imageDataURL, '_blank'));
+        galleryContainer.appendChild(img);
 
-        // ダウンロード
+        // ダウンロード（任意）
         const link = document.createElement('a');
         link.href = imageDataURL;
         link.download = 'cocoro_photo.png';
         link.click();
     });
 
-    // --- 初期画面表示 ---
     showScreen('splash');
 });

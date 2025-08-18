@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 画面要素取得
     const screens = {
-        splash: document.getElementById('screen-splash'),
+        initial: document.getElementById('screen-initial'),
         introduction: document.getElementById('screen-introduction'),
         fvalue: document.getElementById('screen-fvalue-input'),
         camera: document.getElementById('screen-camera'),
     };
 
+    // 画面切替関数
     function showScreen(key) {
         Object.values(screens).forEach(s => s.classList.remove('active'));
         screens[key]?.classList.add('active');
@@ -15,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isFrontCamera = false;
     let selectedFValue = null;
 
+    // カメラ起動
     async function startCamera(facingMode = 'environment') {
         const video = document.getElementById('video');
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
@@ -32,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // F値フィルター適用
     function applyFilter(fValue) {
         const video = document.getElementById('video');
         if (fValue >= 1.2 && fValue < 5.6) video.style.filter = 'saturate(1.5) contrast(1.2)';
@@ -39,15 +43,17 @@ document.addEventListener('DOMContentLoaded', () => {
         else video.style.filter = 'brightness(0.9) contrast(1.1)';
     }
 
-    // スプラッシュ画面
-    document.getElementById('splash-next-btn')?.addEventListener('click', () => {
+    // --- 初期画面ボタン ---
+    document.getElementById('initial-next-btn')?.addEventListener('click', () => {
         showScreen('introduction');
     });
 
-    // 紹介画面クリックでF値画面
-    screens.introduction?.addEventListener('click', () => showScreen('fvalue'));
+    // --- 紹介画面ボタン ---
+    document.getElementById('intro-next-btn')?.addEventListener('click', () => {
+        showScreen('fvalue');
+    });
 
-    // F値決定ボタン
+    // --- F値決定ボタン ---
     document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
         const fValue = parseFloat(document.getElementById('aperture').value);
         selectedFValue = fValue;
@@ -57,14 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('fvalue-display-camera').textContent = "F: " + fValue.toFixed(1);
     });
 
-    // カメラ切替
+    // --- カメラ切替 ---
     document.getElementById('camera-switch-btn')?.addEventListener('click', async () => {
         const newMode = isFrontCamera ? 'environment' : 'user';
         await startCamera(newMode);
         if (selectedFValue !== null) applyFilter(selectedFValue);
     });
 
-    // F値ピンチ操作
+    // --- F値ピンチ操作 ---
     const apertureControl = document.querySelector('.aperture-control');
     const fValueDisplay = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
@@ -72,16 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const minF = 1.2, maxF = 32.0;
     const minSize = 100, maxSize = 250;
 
-    // F値と円サイズを対応させる関数
-    function fToSize(f) {
-        // F32 = 小さい円, F1.2 = 大きい円
-        return minSize + ((maxF - f) / (maxF - minF)) * (maxSize - minSize);
-    }
-    function sizeToF(size) {
-        return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF);
-    }
+    function fToSize(f) {return minSize + ((maxF - f) / (maxF - minF)) * (maxSize - minSize);}
+    function sizeToF(size) {return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF);}
 
-    // 初期値をF32に設定（小さい円）
     if (apertureControl && fValueDisplay && apertureInput) {
         const initialF = 32.0;
         const initialSize = fToSize(initialF);
@@ -114,5 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('touchend', () => lastDistance=null);
 
-    showScreen('splash');
+    // 初期画面表示
+    showScreen('initial');
 });

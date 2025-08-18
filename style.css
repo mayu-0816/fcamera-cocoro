@@ -3,35 +3,23 @@ html, body {
     padding: 0;
     height: 100%;
     width: 100%;
+    font-family: sans-serif;
+    background-color: #f0f0f0;
 }
 
 * {
     box-sizing: border-box;
 }
 
-#screen-camera #video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* 画面に合わせてビデオを拡大・表示する */
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
 body {
-    font-family: sans-serif;
-    background-color: #f0f0f0;
-    /* Flexboxで中央配置 */
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    height: 100vh;
     touch-action: pan-y;
     overscroll-behavior-y: none;
 }
 
-/* スマホ画面のフレーム */
 .app-container {
     width: 100%;
     height: 100%;
@@ -42,7 +30,6 @@ body {
     overflow: hidden;
 }
 
-/* 各画面の基本スタイル */
 .screen {
     position: absolute;
     top: 0;
@@ -65,7 +52,7 @@ body {
     pointer-events: auto;
 }
 
-/* F値入力画面のレイアウト修正 */
+/* F値入力画面 */
 #screen-fvalue-input {
     display: flex;
     flex-direction: column;
@@ -73,7 +60,6 @@ body {
     align-items: center;
     height: 100%;
     width: 100%;
-    padding: 20px;
 }
 
 .f-value-title-container {
@@ -98,7 +84,6 @@ body {
     padding-bottom: 20px;
 }
 
-/* F値入力画面の各要素 */
 .f-value-title {
     font-size: 2rem;
     font-weight: 700;
@@ -119,10 +104,10 @@ body {
     box-sizing: border-box;
     background: #f0f0f0;
     box-shadow:
-        inset 0 0 10px rgba(0, 0, 0, 0.1),
-        0 5px 15px rgba(0, 0, 0, 0.2),
-        0 0 0 4px rgba(255, 255, 255, 0.5),
-        0 0 0 8px rgba(0, 0, 0, 0.05);
+        inset 0 0 10px rgba(0,0,0,0.1),
+        0 5px 15px rgba(0,0,0,0.2),
+        0 0 0 4px rgba(255,255,255,0.5),
+        0 0 0 8px rgba(0,0,0,0.05);
 }
 
 .aperture-value {
@@ -134,13 +119,6 @@ body {
     font-weight: bold;
 }
 
-.description-text {
-    width: 100%;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
 .description-text p {
     font-size: 0.9rem;
     line-height: 1.5;
@@ -148,21 +126,18 @@ body {
     margin: 0;
 }
 
-#f-value-decide-btn {
-    width: 70%;
-    margin: 0 auto 40px;
-    padding: 15px 30px;
-    border-radius: 999px;
+#f-value-decide-btn, #splash-next-btn, .camera-btn {
+    padding: 15px 40px;
     font-size: 16px;
     font-weight: bold;
+    border-radius: 999px;
     cursor: pointer;
-    background: black;
+    background-color: black;
     color: white;
-    border: 1px solid black;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-/* カメラ画面 */
 #screen-camera {
     background-color: #000;
     justify-content: center;
@@ -200,20 +175,10 @@ body {
 .camera-ui-top {
     width: 100%;
     display: flex;
-    justify-content: space-between; /* 左右に配置 */
-    align-items: flex-start;
+    justify-content: space-between;
     padding: 10px;
     color: white;
     font-weight: bold;
-    font-size: 16px;
-}
-
-#bpm-display {
-    text-align: left;
-}
-
-#fvalue-display {
-    text-align: right;
 }
 
 .camera-ui-bottom {
@@ -222,42 +187,4 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 0 20px;
-}
-
-/* カメラボタンの共通スタイル */
-.camera-btn {
-    background: white;
-    color: #333;
-    border: none;
-    padding: 15px 30px;
-    border-radius: 999px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-
-/* カメラ切り替えボタンのスタイル */
-#camera-switch-btn {
-    width: 60px;
-    height: 60px;
-    padding: 0;
-    border-radius: 50%;
-    font-size: 24px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#splash-next-btn {
-    padding: 15px 40px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 999px;
-    background-color: black;
-    color: white;
-    border: none;
-    cursor: pointer;
-    margin-top: 20px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }

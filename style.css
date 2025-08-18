@@ -248,3 +248,16 @@ body {
     justify-content: center;
     align-items: center;
 }
+
+#splash-next-btn {
+    padding: 15px 40px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 999px;
+    background-color: black;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}

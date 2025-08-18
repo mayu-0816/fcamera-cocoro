@@ -7,15 +7,20 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- スプラッシュ画面 -->
+    
+        <!-- 初期画面 -->
+　　    <div id="screen-splash" class="screen active">
+            <h1>こころのF値</h1>
+            <button id="splash-next-btn">つぎへ</button>
+　　    </div>
+    
+        <div class="app-container">
+        <!-- 紹介画面 -->
         <div id="screen-splash" class="screen active">
             <p>わたしたちは<br>utsuRe です</p>
-            <h1>アプリタイトル</h1>
             <button id="splash-next-btn">つぎへ</button>
         </div>
 
-        <!-- 紹介画面 -->
         <div id="screen-introduction" class="screen">
             <p>わたしたちはカメラの可能性を信じ<br>カメラと人との交流による<br>カメラの新たな価値を<br>さがしています</p>
         </div>
@@ -60,3 +65,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+

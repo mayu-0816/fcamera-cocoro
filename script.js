@@ -1,13 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 画面要素取得
     const screens = {
-        initial: document.getElementById('screen-initial'),
+        splash: document.getElementById('screen-splash'),
         introduction: document.getElementById('screen-introduction'),
         fvalue: document.getElementById('screen-fvalue-input'),
         camera: document.getElementById('screen-camera'),
     };
 
-    // 画面切替関数
     function showScreen(key) {
         Object.values(screens).forEach(s => s.classList.remove('active'));
         screens[key]?.classList.add('active');
@@ -17,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isFrontCamera = false;
     let selectedFValue = null;
 
-    // カメラ起動
     async function startCamera(facingMode = 'environment') {
         const video = document.getElementById('video');
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
@@ -35,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // F値フィルター適用
     function applyFilter(fValue) {
         const video = document.getElementById('video');
         if (fValue >= 1.2 && fValue < 5.6) video.style.filter = 'saturate(1.5) contrast(1.2)';
@@ -43,15 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
         else video.style.filter = 'brightness(0.9) contrast(1.1)';
     }
 
-    // --- 初期画面ボタン ---
-    document.getElementById('initial-next-btn')?.addEventListener('click', () => {
+    // --- スプラッシュ画面「つぎへ」 ---
+    document.getElementById('splash-next-btn')?.addEventListener('click', () => {
         showScreen('introduction');
     });
 
-    // --- 紹介画面ボタン ---
-    document.getElementById('intro-next-btn')?.addEventListener('click', () => {
-        showScreen('fvalue');
-    });
+    // --- 紹介画面クリックでF値画面 ---
+    screens.introduction?.addEventListener('click', () => showScreen('fvalue'));
 
     // --- F値決定ボタン ---
     document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
@@ -78,8 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const minF = 1.2, maxF = 32.0;
     const minSize = 100, maxSize = 250;
 
-    function fToSize(f) {return minSize + ((maxF - f) / (maxF - minF)) * (maxSize - minSize);}
-    function sizeToF(size) {return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF);}
+    function fToSize(f) { return minSize + ((maxF - f) / (maxF - minF)) * (maxSize - minSize); }
+    function sizeToF(size) { return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF); }
 
     if (apertureControl && fValueDisplay && apertureInput) {
         const initialF = 32.0;
@@ -90,29 +84,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let lastDistance = null;
-    function getDistance(t1,t2){return Math.hypot(t1.pageX-t2.pageX,t1.pageY-t2.pageY);}
+    function getDistance(t1, t2) { return Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY); }
 
     document.body.addEventListener('touchstart', e => {
         if (!screens.fvalue?.classList.contains('active')) return;
-        if (e.touches.length === 2) { e.preventDefault(); lastDistance = getDistance(e.touches[0],e.touches[1]); }
-    }, {passive:false});
+        if (e.touches.length === 2) { e.preventDefault(); lastDistance = getDistance(e.touches[0], e.touches[1]); }
+    }, { passive: false });
 
     document.body.addEventListener('touchmove', e => {
         if (!screens.fvalue?.classList.contains('active')) return;
         if (e.touches.length === 2 && lastDistance) {
             e.preventDefault();
-            const delta = getDistance(e.touches[0],e.touches[1]) - lastDistance;
+            const delta = getDistance(e.touches[0], e.touches[1]) - lastDistance;
             const newSize = Math.max(minSize, Math.min(maxSize, apertureControl.offsetWidth + delta));
             const newF = sizeToF(newSize);
             apertureControl.style.width = apertureControl.style.height = `${newSize}px`;
             fValueDisplay.textContent = newF.toFixed(1);
             apertureInput.value = newF.toFixed(1);
-            lastDistance = getDistance(e.touches[0],e.touches[1]);
+            lastDistance = getDistance(e.touches[0], e.touches[1]);
         }
-    }, {passive:false});
+    }, { passive: false });
 
-    document.body.addEventListener('touchend', () => lastDistance=null);
+    document.body.addEventListener('touchend', () => lastDistance = null);
 
-    // 初期画面表示
-    showScreen('initial');
+    // --- カメラ撮影ボタン ---
+    const shutterBtn = document.getElementById('camera-shutter-btn');
+    shutterBtn?.addEventListener('click', () => {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `photo_${Date.now()}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+    });
+
+    showScreen('splash');
 });

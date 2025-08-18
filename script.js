@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 screen.classList.remove('active');
             }
         });
-
         const targetScreen = document.getElementById(screenId);
         if (targetScreen) {
             targetScreen.classList.add('active');
@@ -75,29 +74,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // 📷 F値に応じた一眼レフ風フィルター
+    // フィルターを適用する関数（F値イメージに応じて変化）
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
-        
-        if (fValue >= 1.2 && fValue < 2.8) {
-            // 開放：明るくて鮮やか、少しボケ感
-            video.style.filter = 'brightness(1.2) saturate(1.4) blur(1px)';
+        if (fValue < 2.8) {
+            video.style.filter = 'brightness(1.1) blur(2px) saturate(1.2)';
         } else if (fValue >= 2.8 && fValue < 5.6) {
-            // 明るめ＆鮮やか
-            video.style.filter = 'brightness(1.1) saturate(1.2)';
-        } else if (fValue >= 5.6 && fValue < 11.0) {
-            // 標準：自然
+            video.style.filter = 'brightness(1.05) blur(1px) saturate(1.1)';
+        } else if (fValue >= 5.6 && fValue < 11) {
             video.style.filter = 'none';
-        } else if (fValue >= 11.0 && fValue < 16.0) {
-            // 少し暗めでシャープ
-            video.style.filter = 'brightness(0.9) contrast(1.1)';
+        } else if (fValue >= 11 && fValue < 16) {
+            video.style.filter = 'brightness(0.95) contrast(1.1)';
         } else {
-            // F22〜：暗めで硬い雰囲気
             video.style.filter = 'brightness(0.8) contrast(1.2) saturate(0.9)';
         }
     }
     
-    // --- 画面切り替えのイベントリスナーを修正 ---
+    // --- 画面切り替えイベント ---
     if (screens.splash) {
         screens.splash.addEventListener('click', () => {
             showScreen('screen-introduction');
@@ -109,9 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('screen-fvalue-input');
         });
     }
-    // ------------------------------------------
 
-    // F値入力画面の「決定」ボタンへのクリックイベント
+    // F値決定ボタン
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');
     if (fValueDecideBtn) {
         fValueDecideBtn.addEventListener('click', async () => {
@@ -119,10 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('screen-camera');
             await startCamera('environment');
             applyFilterWithFValue(fValue);
+
+            // 🎯 右上に固定でF値を表示
+            const fValueCameraDisplay = document.getElementById('fvalue-display-camera');
+            if (fValueCameraDisplay) {
+                fValueCameraDisplay.textContent = `F: ${fValue.toFixed(1)}`;
+            }
         });
     }
 
-    // カメラ切り替えボタンへのクリックイベントリスナー
+    // カメラ切り替え
     const cameraSwitchBtn = document.getElementById('camera-switch-btn');
     if (cameraSwitchBtn) {
         cameraSwitchBtn.addEventListener('click', () => {
@@ -130,10 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // F値決定円のピンチイン・アウト機能
+    // F値決定円のピンチイン・アウト
     const fValueDisplay = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
-
     let lastDistance = null;
     const minFValue = 1.2;
     const maxFValue = 32.0;
@@ -165,9 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('touchstart', (e) => {
         const fValueScreen = document.getElementById('screen-fvalue-input');
-        if (!fValueScreen || !fValueScreen.classList.contains('active')) {
-            return;
-        }
+        if (!fValueScreen || !fValueScreen.classList.contains('active')) return;
 
         if (e.touches.length === 2) {
             e.preventDefault();
@@ -177,9 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('touchmove', (e) => {
         const fValueScreen = document.getElementById('screen-fvalue-input');
-        if (!fValueScreen || !fValueScreen.classList.contains('active')) {
-            return;
-        }
+        if (!fValueScreen || !fValueScreen.classList.contains('active')) return;
 
         if (e.touches.length === 2) {
             e.preventDefault();
@@ -190,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const delta = currentDistance - lastDistance;
                 const currentSize = apertureControl.offsetWidth;
                 const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 1.0));
-
                 const newFValue = sizeToFValue(newSize);
 
                 apertureControl.style.width = `${newSize}px`;

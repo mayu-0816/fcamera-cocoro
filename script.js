@@ -72,9 +72,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const minF = 1.2, maxF = 32.0;
     const minSize = 100, maxSize = 250;
 
-    function fToSize(f) {return minSize + ((maxF - f) / (maxF - minF)) * (maxSize - minSize);}
-    function sizeToF(size) {return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF);}
+    // F値と円サイズを対応させる関数
+    function fToSize(f) {
+        // F32 = 小さい円, F1.2 = 大きい円
+        return minSize + ((maxF - f) / (maxF - minF)) * (maxSize - minSize);
+    }
+    function sizeToF(size) {
+        return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF);
+    }
 
+    // 初期値をF32に設定（小さい円）
     if (apertureControl && fValueDisplay && apertureInput) {
         const initialF = 32.0;
         const initialSize = fToSize(initialF);
@@ -109,4 +116,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showScreen('splash');
 });
-

@@ -72,8 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const minF = 1.2, maxF = 32.0;
     const minSize = 100, maxSize = 250;
 
-    function fToSize(f) { return minSize + ((f - minF) / (maxF - minF)) * (maxSize - minSize); }
-    function sizeToF(size) { return minF + ((size - minSize) / (maxSize - minSize)) * (maxF - minF); }
+    function fToSize(f) {return minSize + ((maxF - f) / (maxF - minF)) * (maxSize - minSize);}
+    function sizeToF(size) {return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF);}
 
     if (apertureControl && fValueDisplay && apertureInput) {
         const initialF = 32.0;
@@ -109,3 +109,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showScreen('splash');
 });
+

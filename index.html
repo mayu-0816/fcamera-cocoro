@@ -10,20 +10,14 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- スプラッシュ画面 -->
         <div id="screen-splash" class="screen active" data-next-screen="screen-introduction">
             <p>わたしたちは<br>utsuRe です</p>
         </div>
 
-        <!-- 紹介画面 -->
         <div id="screen-introduction" class="screen" data-next-screen="screen-fvalue-input">
-            <p>わたしたちはカメラの可能性を信じ<br>
-            カメラと人との交流による<br>
-            カメラの新たな価値を<br>
-            さがしています</p>
+            <p>わたしたちはカメラの可能性を信じ<br>カメラと人との交流による<br>カメラの新たな価値を<br>さがしています</p>
         </div>
 
-        <!-- F値入力画面 -->
         <div id="screen-fvalue-input" class="screen">
             <div class="f-value-title-container">
                 <p class="f-value-title">こころのF値</p>
@@ -33,24 +27,23 @@
                     <div class="aperture-ring"></div>
                     <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
                     <input type="hidden" id="aperture" value="1.2">
-                </div> <!-- ← ここを閉じ忘れてた -->
+                </div>
             </div>
             <div class="description-text-container">
                 <div class="description-text">
-                    <p>この円は今のあなたのこころの開き具合です<br>
-                    今のあなたのこころのF値をおしえてください</p>
+                    <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
                 </div>
                 <button id="f-value-decide-btn" class="btn">決定</button>
             </div>
         </div>
 
-        <!-- カメラ画面 -->
         <div id="screen-camera" class="screen">
             <video id="video" playsinline></video>
             <canvas id="canvas"></canvas>
             <div class="camera-ui">
                 <div class="camera-ui-top">
-                    <p class="bpm-label">BPM: <span id="bpm-display">--</span></p>
+                    <p class="hud-left">BPM: <span id="bpm-display">--</span></p>
+                    <p class="hud-right" id="fvalue-display-camera">F: --</p>
                 </div>
                 <div class="camera-ui-bottom">
                     <button id="camera-switch-btn" class="camera-btn">⇄</button>
@@ -59,8 +52,6 @@
             </div>
         </div>
     </div>
-
-    <!-- JSを正しいパスに修正 -->
-    <script src="script.js"></script>
+    <script src="fcamera-cocoro/script.js"></script>
 </body>
 </html>

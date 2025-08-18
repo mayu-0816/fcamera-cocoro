@@ -200,7 +200,20 @@ body {
 .camera-ui-top {
     width: 100%;
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between; /* 左右に配置 */
+    align-items: flex-start;
+    padding: 10px;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+#bpm-display {
+    text-align: left;
+}
+
+#fvalue-display {
+    text-align: right;
 }
 
 .camera-ui-bottom {
@@ -235,5 +248,3 @@ body {
     justify-content: center;
     align-items: center;
 }
-
-

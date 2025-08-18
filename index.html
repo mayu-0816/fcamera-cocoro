@@ -10,14 +10,18 @@
 </head>
 <body>
     <div class="app-container">
-        <div id="screen-splash" class="screen active" data-next-screen="screen-introduction">
+        <!-- スプラッシュ画面 -->
+        <div id="screen-splash" class="screen active">
             <p>わたしたちは<br>utsuRe です</p>
+            <button id="splash-next-btn">つぎへ</button>
         </div>
 
-        <div id="screen-introduction" class="screen" data-next-screen="screen-fvalue-input">
+        <!-- 紹介画面 -->
+        <div id="screen-introduction" class="screen">
             <p>わたしたちはカメラの可能性を信じ<br>カメラと人との交流による<br>カメラの新たな価値を<br>さがしています</p>
         </div>
 
+        <!-- F値入力画面 -->
         <div id="screen-fvalue-input" class="screen">
             <div class="f-value-title-container">
                 <p class="f-value-title">こころのF値</p>
@@ -25,8 +29,8 @@
             <div class="aperture-control-container">
                 <div class="aperture-control">
                     <div class="aperture-ring"></div>
-                    <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
-                    <input type="hidden" id="aperture" value="1.2">
+                    <div class="aperture-value">F<span id="f-value-display">32.0</span></div>
+                    <input type="hidden" id="aperture" value="32.0">
                 </div>
             </div>
             <div class="description-text-container">
@@ -37,6 +41,7 @@
             </div>
         </div>
 
+        <!-- カメラ画面 -->
         <div id="screen-camera" class="screen">
             <video id="video" playsinline></video>
             <canvas id="canvas"></canvas>
@@ -53,10 +58,5 @@
         </div>
     </div>
     <script src="fcamera-cocoro/script.js"></script>
-    <div id="screen-splash" class="screen active">
-    <h1>アプリタイトル</h1>
-    <button id="splash-next-btn">つぎへ</button>
-</div>
 </body>
 </html>
-

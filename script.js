@@ -75,21 +75,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // フィルターを適用する関数
+    // 📷 F値に応じた一眼レフ風フィルター
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
         
-        if (fValue >= 1.2 && fValue < 5.6) {
-            video.style.filter = 'saturate(1.5) contrast(1.2)';
-        } else if (fValue >= 5.6 && fValue < 16.0) {
+        if (fValue >= 1.2 && fValue < 2.8) {
+            // 開放：明るくて鮮やか、少しボケ感
+            video.style.filter = 'brightness(1.2) saturate(1.4) blur(1px)';
+        } else if (fValue >= 2.8 && fValue < 5.6) {
+            // 明るめ＆鮮やか
+            video.style.filter = 'brightness(1.1) saturate(1.2)';
+        } else if (fValue >= 5.6 && fValue < 11.0) {
+            // 標準：自然
             video.style.filter = 'none';
+        } else if (fValue >= 11.0 && fValue < 16.0) {
+            // 少し暗めでシャープ
+            video.style.filter = 'brightness(0.9) contrast(1.1)';
         } else {
-            video.style.filter = 'grayscale(100%)';
+            // F22〜：暗めで硬い雰囲気
+            video.style.filter = 'brightness(0.8) contrast(1.2) saturate(0.9)';
         }
     }
     
     // --- 画面切り替えのイベントリスナーを修正 ---
-    // 各画面要素に直接リスナーを設定
     if (screens.splash) {
         screens.splash.addEventListener('click', () => {
             showScreen('screen-introduction');

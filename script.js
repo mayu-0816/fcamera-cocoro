@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 screen.classList.remove('active');
             }
         });
+
         const targetScreen = document.getElementById(screenId);
         if (targetScreen) {
             targetScreen.classList.add('active');
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentStream = null;
     let isFrontCamera = false;
+    let selectedFValue = null; // ✅ 決定したF値を保持する変数
 
     // カメラを起動する関数
     async function startCamera(facingMode = 'environment') {
@@ -74,23 +76,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // フィルターを適用する関数（F値イメージに応じて変化）
+    // フィルターを適用する関数
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
-        if (fValue < 2.8) {
-            video.style.filter = 'brightness(1.1) blur(2px) saturate(1.2)';
-        } else if (fValue >= 2.8 && fValue < 5.6) {
-            video.style.filter = 'brightness(1.05) blur(1px) saturate(1.1)';
-        } else if (fValue >= 5.6 && fValue < 11) {
+        
+        if (fValue >= 1.2 && fValue < 5.6) {
+            video.style.filter = 'saturate(1.5) contrast(1.2)';
+        } else if (fValue >= 5.6 && fValue < 16.0) {
             video.style.filter = 'none';
-        } else if (fValue >= 11 && fValue < 16) {
-            video.style.filter = 'brightness(0.95) contrast(1.1)';
         } else {
-            video.style.filter = 'brightness(0.8) contrast(1.2) saturate(0.9)';
+            video.style.filter = 'brightness(0.9) contrast(1.1)';
         }
     }
     
-    // --- 画面切り替えイベント ---
+    // --- 画面切り替えのイベントリスナーを修正 ---
     if (screens.splash) {
         screens.splash.addEventListener('click', () => {
             showScreen('screen-introduction');
@@ -102,35 +101,43 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('screen-fvalue-input');
         });
     }
+    // ------------------------------------------
 
-    // F値決定ボタン
+    // F値入力画面の「決定」ボタンへのクリックイベント
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');
     if (fValueDecideBtn) {
         fValueDecideBtn.addEventListener('click', async () => {
             const fValue = parseFloat(document.getElementById('aperture').value);
+            selectedFValue = fValue; // ✅ F値を保存
             showScreen('screen-camera');
             await startCamera('environment');
             applyFilterWithFValue(fValue);
 
-            // 🎯 右上に固定でF値を表示
-            const fValueCameraDisplay = document.getElementById('fvalue-display-camera');
-            if (fValueCameraDisplay) {
-                fValueCameraDisplay.textContent = `F: ${fValue.toFixed(1)}`;
+            // ✅ カメラ画面右上にF値を表示
+            const fValueDisplay = document.getElementById('fvalue-display');
+            if (fValueDisplay) {
+                fValueDisplay.textContent = "F" + fValue.toFixed(1);
             }
         });
     }
 
-    // カメラ切り替え
+    // カメラ切り替えボタンへのクリックイベントリスナー
     const cameraSwitchBtn = document.getElementById('camera-switch-btn');
     if (cameraSwitchBtn) {
         cameraSwitchBtn.addEventListener('click', () => {
             switchCamera();
+            // ✅ 切り替え後もF値を表示し続ける
+            const fValueDisplay = document.getElementById('fvalue-display');
+            if (fValueDisplay && selectedFValue !== null) {
+                fValueDisplay.textContent = "F" + selectedFValue.toFixed(1);
+            }
         });
     }
 
-    // F値決定円のピンチイン・アウト
-    const fValueDisplay = document.getElementById('f-value-display');
+    // F値決定円のピンチイン・アウト機能
+    const fValueDisplayElement = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
+
     let lastDistance = null;
     const minFValue = 1.2;
     const maxFValue = 32.0;
@@ -150,19 +157,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return minFValue + (normalizedSize * fValueRange);
     }
     
-    if (fValueDisplay && apertureInput) {
+    if (fValueDisplayElement && apertureInput) {
         const initialFValue = 32.0;
         const initialSize = fValueToSize(initialFValue);
         const apertureControl = document.querySelector('.aperture-control');
         apertureControl.style.width = `${initialSize}px`;
         apertureControl.style.height = `${initialSize}px`;
-        fValueDisplay.textContent = initialFValue.toFixed(1);
+        fValueDisplayElement.textContent = initialFValue.toFixed(1);
         apertureInput.value = initialFValue.toFixed(1);
     }
 
     document.body.addEventListener('touchstart', (e) => {
         const fValueScreen = document.getElementById('screen-fvalue-input');
-        if (!fValueScreen || !fValueScreen.classList.contains('active')) return;
+        if (!fValueScreen || !fValueScreen.classList.contains('active')) {
+            return;
+        }
 
         if (e.touches.length === 2) {
             e.preventDefault();
@@ -172,7 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('touchmove', (e) => {
         const fValueScreen = document.getElementById('screen-fvalue-input');
-        if (!fValueScreen || !fValueScreen.classList.contains('active')) return;
+        if (!fValueScreen || !fValueScreen.classList.contains('active')) {
+            return;
+        }
 
         if (e.touches.length === 2) {
             e.preventDefault();
@@ -183,11 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const delta = currentDistance - lastDistance;
                 const currentSize = apertureControl.offsetWidth;
                 const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 1.0));
+
                 const newFValue = sizeToFValue(newSize);
 
                 apertureControl.style.width = `${newSize}px`;
                 apertureControl.style.height = `${newSize}px`;
-                fValueDisplay.textContent = newFValue.toFixed(1);
+                fValueDisplayElement.textContent = newFValue.toFixed(1);
                 apertureInput.value = newFValue.toFixed(1);
             }
             lastDistance = currentDistance;

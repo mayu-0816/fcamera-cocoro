@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentStream = null;
     let isFrontCamera = false;
-    let selectedFValue = null; // ✅ 決定したF値を保持する変数
+    let selectedFValue = null; // 決定したF値を保持
 
     // カメラを起動する関数
     async function startCamera(facingMode = 'environment') {
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // カメラを切り替える関数
+    // カメラ切り替え
     async function switchCamera() {
         const video = document.getElementById('video');
         if (currentStream) {
@@ -58,11 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newFacingMode = isFrontCamera ? 'environment' : 'user';
-        const constraints = {
-            video: {
-                facingMode: newFacingMode
-            }
-        };
+        const constraints = { video: { facingMode: newFacingMode } };
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -70,16 +66,21 @@ document.addEventListener('DOMContentLoaded', () => {
             video.play();
             currentStream = stream;
             isFrontCamera = !isFrontCamera;
+
+            // 切り替え後もF値表示を維持
+            const fValueDisplay = document.getElementById('fvalue-display');
+            if (fValueDisplay && selectedFValue !== null) {
+                fValueDisplay.textContent = "F" + selectedFValue.toFixed(1);
+            }
         } catch (err) {
             console.error("カメラの切り替えに失敗しました: ", err);
             alert("カメラを切り替えることができませんでした。");
         }
     }
-    
-    // フィルターを適用する関数
+
+    // F値に応じたフィルター
     function applyFilterWithFValue(fValue) {
         const video = document.getElementById('video');
-        
         if (fValue >= 1.2 && fValue < 5.6) {
             video.style.filter = 'saturate(1.5) contrast(1.2)';
         } else if (fValue >= 5.6 && fValue < 16.0) {
@@ -88,32 +89,33 @@ document.addEventListener('DOMContentLoaded', () => {
             video.style.filter = 'brightness(0.9) contrast(1.1)';
         }
     }
-    
-    // --- 画面切り替えのイベントリスナーを修正 ---
-    if (screens.splash) {
-        screens.splash.addEventListener('click', () => {
+
+    // --- スプラッシュ画面「つぎへ」ボタンで次画面へ ---
+    const splashNextBtn = document.getElementById('splash-next-btn');
+    if (splashNextBtn) {
+        splashNextBtn.addEventListener('click', () => {
             showScreen('screen-introduction');
         });
     }
 
+    // --- 紹介画面クリックでF値入力画面へ ---
     if (screens.introduction) {
         screens.introduction.addEventListener('click', () => {
             showScreen('screen-fvalue-input');
         });
     }
-    // ------------------------------------------
 
-    // F値入力画面の「決定」ボタンへのクリックイベント
+    // F値入力画面の決定ボタン
     const fValueDecideBtn = document.getElementById('f-value-decide-btn');
     if (fValueDecideBtn) {
         fValueDecideBtn.addEventListener('click', async () => {
             const fValue = parseFloat(document.getElementById('aperture').value);
-            selectedFValue = fValue; // ✅ F値を保存
+            selectedFValue = fValue; // 保存
             showScreen('screen-camera');
             await startCamera('environment');
             applyFilterWithFValue(fValue);
 
-            // ✅ カメラ画面右上にF値を表示
+            // カメラ画面右上にF値表示
             const fValueDisplay = document.getElementById('fvalue-display');
             if (fValueDisplay) {
                 fValueDisplay.textContent = "F" + fValue.toFixed(1);
@@ -121,42 +123,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // カメラ切り替えボタンへのクリックイベントリスナー
+    // カメラ切り替えボタン
     const cameraSwitchBtn = document.getElementById('camera-switch-btn');
     if (cameraSwitchBtn) {
-        cameraSwitchBtn.addEventListener('click', () => {
-            switchCamera();
-            // ✅ 切り替え後もF値を表示し続ける
-            const fValueDisplay = document.getElementById('fvalue-display');
-            if (fValueDisplay && selectedFValue !== null) {
-                fValueDisplay.textContent = "F" + selectedFValue.toFixed(1);
-            }
-        });
+        cameraSwitchBtn.addEventListener('click', switchCamera);
     }
 
-    // F値決定円のピンチイン・アウト機能
+    // F値決定円のピンチイン・アウト
     const fValueDisplayElement = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
 
     let lastDistance = null;
     const minFValue = 1.2;
     const maxFValue = 32.0;
-
     const minSize = 250;
     const maxSize = 100;
     const sizeRange = minSize - maxSize;
 
     function fValueToSize(fValue) {
-        const fValueRange = maxFValue - minFValue;
-        return minSize - ((fValue - minFValue) / fValueRange) * sizeRange;
+        return minSize - ((fValue - minFValue) / (maxFValue - minFValue)) * sizeRange;
+    }
+    function sizeToFValue(size) {
+        return minFValue + ((minSize - size) / sizeRange) * (maxFValue - minFValue);
     }
 
-    function sizeToFValue(size) {
-        const fValueRange = maxFValue - minFValue;
-        const normalizedSize = (minSize - size) / sizeRange;
-        return minFValue + (normalizedSize * fValueRange);
-    }
-    
     if (fValueDisplayElement && apertureInput) {
         const initialFValue = 32.0;
         const initialSize = fValueToSize(initialFValue);
@@ -169,9 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('touchstart', (e) => {
         const fValueScreen = document.getElementById('screen-fvalue-input');
-        if (!fValueScreen || !fValueScreen.classList.contains('active')) {
-            return;
-        }
+        if (!fValueScreen?.classList.contains('active')) return;
 
         if (e.touches.length === 2) {
             e.preventDefault();
@@ -181,20 +169,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('touchmove', (e) => {
         const fValueScreen = document.getElementById('screen-fvalue-input');
-        if (!fValueScreen || !fValueScreen.classList.contains('active')) {
-            return;
-        }
+        if (!fValueScreen?.classList.contains('active')) return;
 
         if (e.touches.length === 2) {
             e.preventDefault();
             const currentDistance = getDistance(e.touches[0], e.touches[1]);
             const apertureControl = document.querySelector('.aperture-control');
-            
             if (lastDistance && apertureControl) {
                 const delta = currentDistance - lastDistance;
                 const currentSize = apertureControl.offsetWidth;
-                const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta * 1.0));
-
+                const newSize = Math.max(maxSize, Math.min(minSize, currentSize + delta));
                 const newFValue = sizeToFValue(newSize);
 
                 apertureControl.style.width = `${newSize}px`;
@@ -206,15 +190,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, { passive: false });
 
-    document.body.addEventListener('touchend', () => {
-        lastDistance = null;
-    });
+    document.body.addEventListener('touchend', () => { lastDistance = null; });
 
-    function getDistance(touch1, touch2) {
-        const dx = touch1.pageX - touch2.pageX;
-        const dy = touch1.pageY - touch2.pageY;
-        return Math.sqrt(dx * dx + dy * dy);
+    function getDistance(t1, t2) {
+        const dx = t1.pageX - t2.pageX;
+        const dy = t1.pageY - t2.pageY;
+        return Math.sqrt(dx*dx + dy*dy);
     }
 
+    // 初期画面
     showScreen('screen-splash');
 });

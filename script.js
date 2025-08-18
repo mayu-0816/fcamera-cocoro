@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- 画面要素 ---
     const screens = {
         splash: document.getElementById('screen-splash'),
         introduction: document.getElementById('screen-introduction'),
@@ -15,10 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let isFrontCamera = false;
     let selectedFValue = null;
 
+    // --- カメラ起動 ---
     async function startCamera(facingMode = 'environment') {
         const video = document.getElementById('video');
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
-
         const constraints = { video: { facingMode: facingMode === 'environment' ? { exact: "environment" } : "user" } };
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- フィルター適用 ---
     function applyFilter(fValue) {
         const video = document.getElementById('video');
         if (fValue >= 1.2 && fValue < 5.6) video.style.filter = 'saturate(1.5) contrast(1.2)';
@@ -39,15 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
         else video.style.filter = 'brightness(0.9) contrast(1.1)';
     }
 
-    // --- スプラッシュ画面「つぎへ」 ---
-    document.getElementById('splash-next-btn')?.addEventListener('click', () => {
-        showScreen('introduction');
-    });
-
-    // --- 紹介画面クリックでF値画面 ---
+    // --- 画面切替イベント ---
+    document.getElementById('splash-next-btn')?.addEventListener('click', () => showScreen('introduction'));
     screens.introduction?.addEventListener('click', () => showScreen('fvalue'));
 
-    // --- F値決定ボタン ---
     document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
         const fValue = parseFloat(document.getElementById('aperture').value);
         selectedFValue = fValue;
@@ -57,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('fvalue-display-camera').textContent = "F: " + fValue.toFixed(1);
     });
 
-    // --- カメラ切替 ---
     document.getElementById('camera-switch-btn')?.addEventListener('click', async () => {
         const newMode = isFrontCamera ? 'environment' : 'user';
         await startCamera(newMode);
@@ -68,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const apertureControl = document.querySelector('.aperture-control');
     const fValueDisplay = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
-
     const minF = 1.2, maxF = 32.0;
     const minSize = 100, maxSize = 250;
 
@@ -107,27 +102,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('touchend', () => lastDistance = null);
 
-    // --- カメラ撮影ボタン ---
-    const shutterBtn = document.getElementById('camera-shutter-btn');
-    shutterBtn?.addEventListener('click', () => {
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
+    // --- 撮影機能 ---
+    const canvas = document.getElementById('canvas');
+    const cameraShutterBtn = document.getElementById('camera-shutter-btn');
+
+    cameraShutterBtn?.addEventListener('click', () => {
+        if (!video.srcObject) return;
 
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageDataURL = canvas.toDataURL('image/png');
 
-        canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `photo_${Date.now()}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }, 'image/png');
+        // プレビュー表示
+        let previewImg = document.getElementById('camera-preview');
+        if (!previewImg) {
+            previewImg = document.createElement('img');
+            previewImg.id = 'camera-preview';
+            previewImg.style.position = 'absolute';
+            previewImg.style.top = '10px';
+            previewImg.style.left = '10px';
+            previewImg.style.width = '100px';
+            previewImg.style.border = '2px solid white';
+            previewImg.style.zIndex = 10;
+            screens.camera.appendChild(previewImg);
+        }
+        previewImg.src = imageDataURL;
+
+        // ダウンロード
+        const link = document.createElement('a');
+        link.href = imageDataURL;
+        link.download = 'cocoro_photo.png';
+        link.click();
     });
 
+    // --- 初期画面表示 ---
     showScreen('splash');
 });

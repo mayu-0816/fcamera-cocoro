@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 各画面要素
     const screens = {
-        splash: document.getElementById('screen-splash'),
+        initial: document.getElementById('screen-initial'),
         introduction: document.getElementById('screen-introduction'),
         fvalue: document.getElementById('screen-fvalue-input'),
         camera: document.getElementById('screen-camera'),
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         screens[key]?.classList.add('active');
     }
 
+    // カメラ関連
     let currentStream = null;
     let isFrontCamera = false;
     let selectedFValue = null;
@@ -18,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function startCamera(facingMode = 'environment') {
         const video = document.getElementById('video');
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
+
         const constraints = { video: { facingMode: facingMode === 'environment' ? { exact: "environment" } : "user" } };
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -38,9 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
         else video.style.filter = 'brightness(0.9) contrast(1.1)';
     }
 
-    document.getElementById('splash-next-btn')?.addEventListener('click', () => showScreen('introduction'));
-    screens.introduction?.addEventListener('click', () => showScreen('fvalue'));
+    // --- 画面切り替え ---
+    document.getElementById('initial-next-btn')?.addEventListener('click', () => showScreen('introduction'));
+    document.getElementById('intro-next-btn')?.addEventListener('click', () => showScreen('fvalue'));
 
+    // --- F値決定 ---
     document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
         const fValue = parseFloat(document.getElementById('aperture').value);
         selectedFValue = fValue;
@@ -50,12 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('fvalue-display-camera').textContent = "F: " + fValue.toFixed(1);
     });
 
+    // --- カメラ切替 ---
     document.getElementById('camera-switch-btn')?.addEventListener('click', async () => {
         const newMode = isFrontCamera ? 'environment' : 'user';
         await startCamera(newMode);
         if (selectedFValue !== null) applyFilter(selectedFValue);
     });
 
+    // --- F値ピンチ操作 ---
     const apertureControl = document.querySelector('.aperture-control');
     const fValueDisplay = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
@@ -102,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('video');
     const cameraShutterBtn = document.getElementById('camera-shutter-btn');
 
-    // ギャラリーコンテナを追加
     let galleryContainer = document.getElementById('camera-gallery');
     if (!galleryContainer) {
         galleryContainer = document.createElement('div');
@@ -138,12 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
         img.addEventListener('click', () => window.open(imageDataURL, '_blank'));
         galleryContainer.appendChild(img);
 
-        // ダウンロード（任意）
+        // 自動ダウンロード
         const link = document.createElement('a');
         link.href = imageDataURL;
         link.download = 'cocoro_photo.png';
         link.click();
     });
 
-    showScreen('splash');
+    // 最初の画面を表示
+    showScreen('initial');
 });

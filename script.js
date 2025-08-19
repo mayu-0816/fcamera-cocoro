@@ -1,23 +1,21 @@
-// script.js（F値反映版）
+// script.js
 document.addEventListener('DOMContentLoaded', () => {
-    // --- 画面要素 ---
+    // --- 画面要素の定義 ---
     const screens = {
         initial: document.getElementById('screen-initial'),
         introduction: document.getElementById('screen-introduction'),
         fvalue: document.getElementById('screen-fvalue-input'),
+        bpm: document.getElementById('screen-bpm-measure'),
         camera: document.getElementById('screen-camera'),
     };
 
     function showScreen(key) {
-        Object.values(screens).forEach(s => s.classList.remove('active'));
+        Object.values(screens).forEach(s => s?.classList.remove('active'));
         screens[key]?.classList.add('active');
     }
 
     // --- カメラ・プレビュー用 ---
-    const video = document.getElementById('video');        // 入力用（非表示）
-    const rawCanvas = document.getElementById('canvas');   // 保存用canvas
-
-    // プレビュー用canvasを自動生成
+    const video = document.getElementById('video');
     const previewCanvas = document.createElement('canvas');
     const previewCtx = previewCanvas.getContext('2d');
     previewCanvas.style.position = 'absolute';
@@ -30,18 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentStream = null;
     let isFrontCamera = false;
-    let selectedFValue = 32.0; // 初期F値
+    let selectedFValue = 1.2;
+    let measuredBPM = '--';
 
     // --- F値に応じたフィルター計算 ---
     function getFilter(fValue) {
-        // 明るさ
         const brightness = Math.max(0.7, Math.min(1.5, 2.5 / fValue));
-        // 彩度
         const saturate = Math.max(0.5, Math.min(2.0, 2.0 - fValue/32));
-        // コントラスト
         const contrast = Math.max(0.8, Math.min(1.3, 1.0 + (8/fValue)*0.05));
-        // 背景ぼかし（擬似的に被写界深度）
-        const blur = Math.max(0, 8*(1.2/fValue)); // F小 → blur大
+        const blur = Math.max(0, 8*(1.2/fValue));
         return `brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(${blur}px)`;
     }
 
@@ -51,18 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (rafId) cancelAnimationFrame(rafId);
         const render = () => {
             if (video.videoWidth && video.videoHeight) {
-                // canvasサイズ合わせ
                 if (previewCanvas.width !== video.videoWidth || previewCanvas.height !== video.videoHeight) {
                     previewCanvas.width = video.videoWidth;
                     previewCanvas.height = video.videoHeight;
                 }
-                // 前のフレームをクリア
-                previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
-                
-                // プレビューにリアルタイムでフィルターを適用
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
                 previewCanvas.style.filter = getFilter(selectedFValue);
-
-                // 内カメラの鏡像補正はせず自然表示
                 previewCtx.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
             }
             rafId = requestAnimationFrame(render);
@@ -94,17 +83,80 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 画面遷移 ---
     document.getElementById('initial-next-btn')?.addEventListener('click', ()=>showScreen('introduction'));
     document.getElementById('intro-next-btn')?.addEventListener('click', ()=>showScreen('fvalue'));
-
-    // --- F値決定 ---
-    document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
+    
+    document.getElementById('f-value-decide-btn')?.addEventListener('click', () => {
         const f = parseFloat(document.getElementById('aperture').value);
         selectedFValue = f;
-        showScreen('camera');
-        await startCamera('environment');
-        const fHud = document.getElementById('fvalue-display-camera');
-        if(fHud) fHud.textContent = 'F: ' + f.toFixed(1);
+        showScreen('bpm');
     });
+    
+    // --- BPM計測 ---
+    const bpmVideo = document.getElementById('bpm-video');
+    const bpmCanvas = document.getElementById('bpm-canvas');
+    const bpmDisplay = screens.bpm.querySelector('#bpm-display');
+    const bpmStartBtn = document.getElementById('bpm-start-btn');
+    const bpmStopBtn = document.getElementById('bpm-stop-btn');
+    const bpmNextBtn = document.getElementById('bpm-next-btn');
+    
+    let bpmStream = null;
+    let bpmMeasurement = null;
 
+    async function startBPMMeasurement() {
+        try {
+            const constraints = { video: { facingMode: { exact: "environment" } } };
+            bpmStream = await navigator.mediaDevices.getUserMedia(constraints);
+            bpmVideo.srcObject = bpmStream;
+            await bpmVideo.play();
+            
+            bpmStartBtn.style.display = 'none';
+            bpmStopBtn.style.display = 'block';
+            bpmNextBtn.style.display = 'none';
+            bpmDisplay.textContent = '計測中...';
+
+            // ダミーのBPM計測ロジック
+            let counter = 0;
+            bpmMeasurement = setInterval(() => {
+                const dummyBPM = Math.floor(Math.random() * (120 - 60 + 1) + 60);
+                bpmDisplay.textContent = `${dummyBPM} bpm`;
+                counter++;
+                if(counter >= 10){
+                    measuredBPM = dummyBPM;
+                    stopBPMMeasurement();
+                }
+            }, 1000);
+        } catch (err) {
+            console.error('BPM計測エラー:', err);
+            alert('カメラを起動できません。指を置く部分なので、バックカメラが有効になるよう設定してください。');
+            stopBPMMeasurement();
+        }
+    }
+
+    function stopBPMMeasurement() {
+        if (bpmStream) {
+            bpmStream.getTracks().forEach(track => track.stop());
+            bpmStream = null;
+        }
+        if (bpmMeasurement) {
+            clearInterval(bpmMeasurement);
+            bpmMeasurement = null;
+        }
+        
+        bpmStartBtn.style.display = 'block';
+        bpmStopBtn.style.display = 'none';
+        bpmNextBtn.style.display = 'block';
+        bpmDisplay.textContent = `${measuredBPM} bpm`;
+    }
+
+    bpmStartBtn?.addEventListener('click', startBPMMeasurement);
+    bpmStopBtn?.addEventListener('click', stopBPMMeasurement);
+    bpmNextBtn?.addEventListener('click', () => {
+        stopBPMMeasurement();
+        showScreen('camera');
+        startCamera('environment');
+        document.getElementById('fvalue-display-camera').textContent = `F: ${selectedFValue}`;
+        document.getElementById('bpm-display').textContent = `${measuredBPM} bpm`;
+    });
+    
     // --- カメラ切替 ---
     document.getElementById('camera-switch-btn')?.addEventListener('click', async () => {
         const newMode = isFrontCamera ? 'environment' : 'user';
@@ -162,41 +214,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return g;
     }
 
-    shutterBtn?.addEventListener('click', ()=>{
-        if(!video.videoWidth) return;
-        
-        // 新しい一時的なcanvasを作成
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = video.videoWidth;
-        tempCanvas.height = video.videoHeight;
-        const tempCtx = tempCanvas.getContext('2d');
-        
-        // プレビューと同じフィルターを適用
-        tempCtx.filter = previewCanvas.style.filter;
-        
-        // 映像をcanvasに描画してフィルターを焼き付ける
-        tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-        
-        // 描画されたcanvasから画像データを取得
-        const dataURL = tempCanvas.toDataURL('image/png');
+    shutterBtn?.addEventListener('click', ()=>{
+        if(!video.videoWidth) return;
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth;
+        tempCanvas.height = video.videoHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        tempCtx.filter = previewCanvas.style.filter;
+        tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        const dataURL = tempCanvas.toDataURL('image/png');
 
-        // ギャラリー追加
-        const gallery = ensureGallery();
-        const thumb = document.createElement('img');
-        thumb.src=dataURL; 
-        thumb.style.width='80px'; 
-        thumb.style.border='2px solid white';
-        thumb.style.cursor='pointer'; 
-        thumb.addEventListener('click',()=>window.open(dataURL,'_blank'));
-        gallery.appendChild(thumb);
+        // ギャラリーにサムネイルを追加
+        const gallery = ensureGallery();
+        const thumb = document.createElement('img');
+        thumb.src=dataURL; 
+        thumb.style.width='80px'; 
+        thumb.style.border='2px solid white';
+        thumb.style.cursor='pointer'; 
+        thumb.addEventListener('click',()=>window.open(dataURL,'_blank'));
+        gallery.appendChild(thumb);
 
-        // ダウンロード
-        const a = document.createElement('a'); 
-        a.href=dataURL; 
-        a.download='cocoro_photo.png'; 
-        a.click();
-    });
+        // ダウンロード
+        const a = document.createElement('a'); 
+        a.href=dataURL; 
+        a.download='cocoro_photo.png'; 
+        a.click();
+    });
 
-    // 初期画面
+    // 初期画面表示
     showScreen('initial');
 });

@@ -1,62 +1,80 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>こころのF値</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>こころのF値</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- 初期画面 -->
-        <div id="screen-initial" class="screen active">
-            <h1>こころのF値</h1>
-            <button id="initial-next-btn">つぎへ</button>
-        </div>
+    <div class="app-container">
+        <!-- 初期画面 -->
+        <div id="screen-initial" class="screen active">
+            <h1>こころのF値</h1>
+            <button id="initial-next-btn">つぎへ</button>
+        </div>
 
-        <!-- 紹介画面 -->
-        <div id="screen-introduction" class="screen">
-            <p>わたしたちはutsuReです</p>
-            <button id="intro-next-btn">つぎへ</button>
-        </div>
+        <!-- 紹介画面 -->
+        <div id="screen-introduction" class="screen">
+            <p>わたしたちはutsuReです</p>
+            <button id="intro-next-btn">つぎへ</button>
+        </div>
 
-        <!-- F値入力画面 -->
-        <div id="screen-fvalue-input" class="screen">
-            <div class="f-value-title-container">
-                <p class="f-value-title">こころのF値</p>
-            </div>
-            <div class="aperture-control-container">
-                <div class="aperture-control">
-                    <div class="aperture-ring"></div>
-                    <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
-                    <input type="hidden" id="aperture" value="1.2">
-                </div>
-            </div>
-            <div class="description-text-container">
-                <div class="description-text">
-                    <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
-                </div>
-                <button id="f-value-decide-btn">決定</button>
-            </div>
-        </div>
+        <!-- F値入力画面 -->
+        <div id="screen-fvalue-input" class="screen">
+            <div class="f-value-title-container">
+                <p class="f-value-title">こころのF値</p>
+            </div>
+            <div class="aperture-control-container">
+                <div class="aperture-control">
+                    <div class="aperture-ring"></div>
+                    <div class="aperture-value">F<span id="f-value-display">1.2</span></div>
+                    <input type="hidden" id="aperture" value="1.2">
+                </div>
+            </div>
+            <div class="description-text-container">
+                <div class="description-text">
+                    <p>この円は今のあなたのこころの開き具合です<br>今のあなたのこころのF値をおしえてください</p>
+                </div>
+                <button id="f-value-decide-btn">決定</button>
+            </div>
+        </div>
 
-        <!-- カメラ画面 -->
-        <div id="screen-camera" class="screen">
-            <video id="video" playsinline></video>
-            <canvas id="canvas"></canvas>
-            <div class="camera-ui">
-                <div class="camera-ui-top">
-                    <p class="hud-left">BPM: <span id="bpm-display">--</span></p>
-                    <p class="hud-right" id="fvalue-display-camera">F: --</p>
-                </div>
-                <div class="camera-ui-bottom">
-                    <button id="camera-switch-btn" class="camera-btn">⇄</button>
-                    <button id="camera-shutter-btn" class="camera-btn">撮影</button>
-                </div>
-            </div>
-        </div>
-    </div>
+        <!-- BPM計測画面 -->
+        <div id="screen-bpm-measure" class="screen">
+            <div class="content">
+                <h2>あなたの心に、耳を澄ます</h2>
+                <p>カメラに指を当てて、あなたのBPMを測ります</p>
+                <div class="bpm-container">
+                    <video id="bpm-video" autoplay playsinline style="display: none;"></video>
+                    <canvas id="bpm-canvas" class="bpm-canvas"></canvas>
+                    <div id="bpm-display" class="bpm-display">-- bpm</div>
+                </div>
+                <div class="bpm-controls">
+                    <button id="bpm-start-btn" class="bpm-btn">計測開始</button>
+                    <button id="bpm-stop-btn" class="bpm-btn" style="display: none;">計測停止</button>
+                </div>
+                <button id="bpm-next-btn" class="next-btn" style="display: none;">次へ</button>
+            </div>
+        </div>
 
-    <script src="script.js"></script>
+        <!-- カメラ画面 -->
+        <div id="screen-camera" class="screen">
+            <video id="video" playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="camera-ui">
+                <div class="camera-ui-top">
+                    <p class="hud-left">BPM: <span id="bpm-display">--</span></p>
+                    <p class="hud-right" id="fvalue-display-camera">F: --</p>
+                </div>
+                <div class="camera-ui-bottom">
+                    <button id="camera-switch-btn" class="camera-btn">⇄</button>
+                    <button id="camera-shutter-btn" class="camera-btn">撮影</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

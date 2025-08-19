@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 // 前のフレームをクリア
                 previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
-
-                // ★プレビューにリアルタイムでフィルターを適用★
+                
+                // プレビューにリアルタイムでフィルターを適用
                 previewCanvas.style.filter = getFilter(selectedFValue);
 
                 // 内カメラの鏡像補正はせず自然表示
@@ -163,30 +163,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     shutterBtn?.addEventListener('click', ()=>{
-        if(!video.videoWidth) return;
-        const captureCanvas = rawCanvas || document.createElement('canvas');
-        captureCanvas.width=video.videoWidth;
-        captureCanvas.height=video.videoHeight;
-        const ctx=captureCanvas.getContext('2d');
-        
-        // ★ここを修正★
-        // フィルターを適用した画像をキャンバスに描画
-        ctx.filter = getFilter(selectedFValue); 
-        ctx.drawImage(video,0,0,captureCanvas.width,captureCanvas.height);
-        
-        // 描画されたキャンバスから画像データを取得
-        const dataURL = captureCanvas.toDataURL('image/png');
+        if(!video.videoWidth) return;
 
-        // ギャラリー追加
-        const gallery = ensureGallery();
-        const thumb = document.createElement('img');
-        thumb.src=dataURL; thumb.style.width='80px'; thumb.style.border='2px solid white';
-        thumb.style.cursor='pointer'; thumb.addEventListener('click',()=>window.open(dataURL,'_blank'));
-        gallery.appendChild(thumb);
+        // 一時的なcanvasを作成
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth;
+        tempCanvas.height = video.videoHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // 動画フレームを一時canvasに描画
+        tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // ピクセルデータを取得
+        const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        const data = imageData.data;
+    
+        // F値に応じたフィルターの係数を計算
+        const fValue = selectedFValue;
+        const brightness = Math.max(0.7, Math.min(1.5, 2.5 / fValue));
+        const saturate = Math.max(0.5, Math.min(2.0, 2.0 - fValue / 32));
+        const contrast = Math.max(0.8, Math.min(1.3, 1.0 + (8 / fValue) * 0.05));
+    
+        const contrastFactor = (259 * (contrast + 1)) / (130 * (1 - contrast)) + 1;
+    
+        // ピクセルごとにフィルターを適用
+        for (let i = 0; i < data.length; i += 4) {
+            // 明るさとコントラスト
+            let r = (data[i] - 128) * contrastFactor + 128 * brightness;
+            let g = (data[i + 1] - 128) * contrastFactor + 128 * brightness;
+            let b = (data[i + 2] - 128) * contrastFactor + 128 * brightness;
+    
+            // 彩度
+            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+            r = luma + saturate * (r - luma);
+            g = luma + saturate * (g - luma);
+            b = luma + saturate * (b - luma);
+            
+            data[i] = Math.min(255, Math.max(0, r));
+            data[i + 1] = Math.min(255, Math.max(0, g));
+            data[i + 2] = Math.min(255, Math.max(0, b));
+        }
+    
+        // 更新されたピクセルデータをcanvasに戻す
+        tempCtx.putImageData(imageData, 0, 0);
 
-        // ダウンロード
-        const a = document.createElement('a'); a.href=dataURL; a.download='cocoro_photo.png'; a.click();
-    });
+        // 背景ぼかし（これはピクセル操作では難しいため、CSSフィルターを使用）
+        // toDataURLには反映されませんが、ギャラリーサムネイルに適用する目的で残しています。
+        tempCanvas.style.filter = `blur(${Math.max(0, 8*(1.2/fValue))}px)`;
+        
+        // 最終的な画像データを取得
+        const dataURL = tempCanvas.toDataURL('image/png');
+
+        // ギャラリー追加
+        const gallery = ensureGallery();
+        const thumb = document.createElement('img');
+        thumb.src = dataURL;
+        thumb.style.width = '80px';
+        thumb.style.border = '2px solid white';
+        thumb.style.cursor = 'pointer';
+        thumb.addEventListener('click', () => window.open(dataURL, '_blank'));
+        gallery.appendChild(thumb);
+    
+        // ダウンロード
+        const a = document.createElement('a');
+        a.href = dataURL;
+        a.download = 'cocoro_photo.png';
+        a.click();
+    });
 
     // 初期画面
     showScreen('initial');

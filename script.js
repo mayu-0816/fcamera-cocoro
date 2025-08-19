@@ -36,8 +36,11 @@
             background: #fff;
             position: relative;
             overflow: hidden;
-            /* 修正点: コンテナ自体が中央に配置されるように調整 */
-            margin: auto;
+            /* 修正点: コンテナを中央に配置する絶対的な方法を追加 */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .screen {

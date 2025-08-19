@@ -133,35 +133,41 @@ document.addEventListener('DOMContentLoaded', () => {
         screens.camera.appendChild(galleryContainer);
     }
 
-    cameraShutterBtn?.addEventListener('click', () => {
-        if (!video.srcObject) return;
+cameraShutterBtn?.addEventListener('click', () => {
+    if (!video.srcObject) return;
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
 
-        // ★ 撮影時にもフィルターを適用
-        ctx.filter = getCanvasFilter(selectedFValue);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // F値に応じたフィルターをcanvasにも適用
+    if (selectedFValue >= 1.2 && selectedFValue < 5.6) {
+        ctx.filter = 'saturate(1.5) contrast(1.2)';
+    } else if (selectedFValue >= 5.6 && selectedFValue < 16.0) {
+        ctx.filter = 'none';
+    } else {
+        ctx.filter = 'brightness(0.9) contrast(1.1)';
+    }
 
-        const imageDataURL = canvas.toDataURL('image/png');
+    // フィルターを反映した状態で描画
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // ギャラリーに追加
-        const img = document.createElement('img');
-        img.src = imageDataURL;
-        img.style.width = '80px';
-        img.style.border = '2px solid white';
-        img.style.cursor = 'pointer';
-        img.addEventListener('click', () => window.open(imageDataURL, '_blank'));
-        galleryContainer.appendChild(img);
+    const imageDataURL = canvas.toDataURL('image/png');
 
-        // ダウンロード
-        const link = document.createElement('a');
-        link.href = imageDataURL;
-        link.download = 'cocoro_photo.png';
-        link.click();
-    });
+    // ギャラリーに追加
+    const img = document.createElement('img');
+    img.src = imageDataURL;
+    img.style.width = '80px';
+    img.style.border = '2px solid white';
+    img.style.cursor = 'pointer';
+    img.addEventListener('click', () => window.open(imageDataURL, '_blank'));
+    galleryContainer.appendChild(img);
 
-    // 最初は初期画面
-    showScreen('initial');
+    // ダウンロード
+    const link = document.createElement('a');
+    link.href = imageDataURL;
+    link.download = 'cocoro_photo.png';
+    link.click();
 });
+
+

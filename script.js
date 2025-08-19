@@ -232,3 +232,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初期画面へ
     showScreen('initial');
 });
+

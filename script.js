@@ -162,55 +162,70 @@ document.addEventListener('DOMContentLoaded', () => {
         return g;
     }
 
-    shutterBtn?.addEventListener('click', ()=>{
+    shutterBtn?.addEventListener('click', ()=>{
         if(!video.videoWidth) return;
+
+        // プレビューcanvasから現在のフィルターを取得
+        const currentFilter = previewCanvas.style.filter;
+        let brightness = 1;
+        let contrast = 1;
+        let saturate = 1;
+
+        // フィルター文字列を解析してパラメータを抽出
+        const filters = currentFilter.split(' ');
+        filters.forEach(filter => {
+            if (filter.startsWith('brightness')) {
+                brightness = parseFloat(filter.substring(filter.indexOf('(') + 1, filter.indexOf(')')));
+            } else if (filter.startsWith('contrast')) {
+                contrast = parseFloat(filter.substring(filter.indexOf('(') + 1, filter.indexOf(')')));
+            } else if (filter.startsWith('saturate')) {
+                saturate = parseFloat(filter.substring(filter.indexOf('(') + 1, filter.indexOf(')')));
+            }
+        });
 
         // 一時的なcanvasを作成
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = video.videoWidth;
         tempCanvas.height = video.videoHeight;
         const tempCtx = tempCanvas.getContext('2d');
-        
+
         // 動画フレームを一時canvasに描画
         tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-        
+
         // ピクセルデータを取得
         const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
         const data = imageData.data;
-    
-        // F値に応じたフィルターの係数を計算
-        const fValue = selectedFValue;
-        const brightness = Math.max(0.7, Math.min(1.5, 2.5 / fValue));
-        const saturate = Math.max(0.5, Math.min(2.0, 2.0 - fValue / 32));
-        const contrast = Math.max(0.8, Math.min(1.3, 1.0 + (8 / fValue) * 0.05));
-    
-        const contrastFactor = (259 * (contrast + 1)) / (130 * (1 - contrast)) + 1;
-    
+
         // ピクセルごとにフィルターを適用
         for (let i = 0; i < data.length; i += 4) {
-            // 明るさとコントラスト
-            let r = (data[i] - 128) * contrastFactor + 128 * brightness;
-            let g = (data[i + 1] - 128) * contrastFactor + 128 * brightness;
-            let b = (data[i + 2] - 128) * contrastFactor + 128 * brightness;
-    
-            // 彩度
-            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-            r = luma + saturate * (r - luma);
-            g = luma + saturate * (g - luma);
-            b = luma + saturate * (b - luma);
+            let r = data[i];
+            let g = data[i + 1];
+            let b = data[i + 2];
+
+            // 明るさ (brightness)
+            r *= brightness;
+            g *= brightness;
+            b *= brightness;
+
+            // 彩度 (saturate)
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            r = gray + saturate * (r - gray);
+            g = gray + saturate * (g - gray);
+            b = gray + saturate * (b - gray);
             
+            // コントラスト (contrast)
+            r = (r - 128) * contrast + 128;
+            g = (g - 128) * contrast + 128;
+            b = (b - 128) * contrast + 128;
+
             data[i] = Math.min(255, Math.max(0, r));
             data[i + 1] = Math.min(255, Math.max(0, g));
             data[i + 2] = Math.min(255, Math.max(0, b));
         }
-    
+
         // 更新されたピクセルデータをcanvasに戻す
         tempCtx.putImageData(imageData, 0, 0);
 
-        // 背景ぼかし（これはピクセル操作では難しいため、CSSフィルターを使用）
-        // toDataURLには反映されませんが、ギャラリーサムネイルに適用する目的で残しています。
-        tempCanvas.style.filter = `blur(${Math.max(0, 8*(1.2/fValue))}px)`;
-        
         // 最終的な画像データを取得
         const dataURL = tempCanvas.toDataURL('image/png');
 

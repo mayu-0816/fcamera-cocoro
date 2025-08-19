@@ -33,12 +33,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // F値に応じたフィルター
+    // F値に応じたフィルター (video表示用)
     function applyFilter(fValue) {
         const video = document.getElementById('video');
         if (fValue >= 1.2 && fValue < 5.6) video.style.filter = 'saturate(1.5) contrast(1.2)';
         else if (fValue >= 5.6 && fValue < 16.0) video.style.filter = 'none';
         else video.style.filter = 'brightness(0.9) contrast(1.1)';
+    }
+
+    // 撮影用フィルター（canvas描画用）
+    function getCanvasFilter(fValue) {
+        if (fValue >= 1.2 && fValue < 5.6) return 'saturate(1.5) contrast(1.2)';
+        if (fValue >= 16.0) return 'brightness(0.9) contrast(1.1)';
+        return 'none';
     }
 
     // ボタンクリックで画面切替
@@ -132,6 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
+
+        // ★ 撮影時にもフィルターを適用
+        ctx.filter = getCanvasFilter(selectedFValue);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         const imageDataURL = canvas.toDataURL('image/png');

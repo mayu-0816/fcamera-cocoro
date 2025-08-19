@@ -163,29 +163,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     shutterBtn?.addEventListener('click', ()=>{
-        if(!video.videoWidth) return;
-        const captureCanvas = rawCanvas || document.createElement('canvas');
-        captureCanvas.width=video.videoWidth;
-        captureCanvas.height=video.videoHeight;
-        const ctx=captureCanvas.getContext('2d');
+    if(!video.videoWidth) return;
+    
+    // ★プレビュー用のcanvasから画像データを直接取得★
+    const dataURL = previewCanvas.toDataURL('image/png');
 
-        // ★保存する画像にフィルターを適用★
-        ctx.filter = getFilter(selectedFValue); 
+    // ギャラリー追加
+    const gallery = ensureGallery();
+    const thumb = document.createElement('img');
+    thumb.src=dataURL; thumb.style.width='80px'; thumb.style.border='2px solid white';
+    thumb.style.cursor='pointer'; thumb.addEventListener('click',()=>window.open(dataURL,'_blank'));
+    gallery.appendChild(thumb);
 
-        ctx.drawImage(video,0,0,captureCanvas.width,captureCanvas.height);
-        const dataURL = captureCanvas.toDataURL('image/png');
-
-        // ギャラリー追加
-        const gallery = ensureGallery();
-        const thumb = document.createElement('img');
-        thumb.src=dataURL; thumb.style.width='80px'; thumb.style.border='2px solid white';
-        thumb.style.cursor='pointer'; thumb.addEventListener('click',()=>window.open(dataURL,'_blank'));
-        gallery.appendChild(thumb);
-
-        // ダウンロード
-        const a = document.createElement('a'); a.href=dataURL; a.download='cocoro_photo.png'; a.click();
-    });
-
+    // ダウンロード
+    const a = document.createElement('a'); a.href=dataURL; a.download='cocoro_photo.png'; a.click();
+});
     // 初期画面
     showScreen('initial');
 });
+

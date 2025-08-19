@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 画面要素
+    // 画面要素をIDに合わせて定義
     const screens = {
         initial: document.getElementById('screen-initial'),
         introduction: document.getElementById('screen-introduction'),
@@ -14,11 +14,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentStream = null;
     let isFrontCamera = false;
-    let selectedFValue = 32.0; // 初期値
+    let selectedFValue = null;
 
-    // --- カメラ起動 ---
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const cameraShutterBtn = document.getElementById('camera-shutter-btn');
+
+    // プレビュー用canvas（videoの上に描画）
+    const previewCanvas = document.createElement('canvas');
+    const previewCtx = previewCanvas.getContext('2d');
+    previewCanvas.style.position = 'absolute';
+    previewCanvas.style.top = '0';
+    previewCanvas.style.left = '0';
+    previewCanvas.style.width = '100%';
+    previewCanvas.style.height = '100%';
+    screens.camera.appendChild(previewCanvas);
+
+    let rafId = null;
+
+    // F値に応じたフィルター
+    function getFilter(fValue) {
+        if (fValue >= 1.2 && fValue < 5.6) return 'saturate(1.5) contrast(1.2)';
+        if (fValue >= 16.0) return 'brightness(0.9) contrast(1.1)';
+        return 'none';
+    }
+
+    function applyFilterToVideo(fValue) {
+        video.style.filter = getFilter(fValue);
+    }
+
+    // カメラ起動
     async function startCamera(facingMode = 'environment') {
-        const video = document.getElementById('video');
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
         const constraints = { video: { facingMode: facingMode === 'environment' ? { exact: "environment" } : "user" } };
         try {
@@ -27,41 +53,52 @@ document.addEventListener('DOMContentLoaded', () => {
             await video.play();
             currentStream = stream;
             isFrontCamera = (facingMode === 'user');
+            startPreviewLoop();
         } catch (err) {
             console.error("カメラへのアクセス拒否:", err);
             alert("カメラを起動できませんでした。アクセスを許可してください。");
         }
     }
 
-    // --- videoプレビューにフィルター反映 ---
-    function applyVideoFilter(fValue) {
-        const video = document.getElementById('video');
-        if (fValue >= 1.2 && fValue < 5.6) video.style.filter = 'saturate(1.5) contrast(1.2)';
-        else if (fValue >= 5.6 && fValue < 16.0) video.style.filter = 'none';
-        else video.style.filter = 'brightness(0.9) contrast(1.1)';
+    // プレビューループ
+    function startPreviewLoop() {
+        if (rafId) cancelAnimationFrame(rafId);
+        const render = () => {
+            if (video.videoWidth && video.videoHeight) {
+                if (previewCanvas.width !== video.videoWidth || previewCanvas.height !== video.videoHeight) {
+                    previewCanvas.width = video.videoWidth;
+                    previewCanvas.height = video.videoHeight;
+                }
+                previewCtx.filter = getFilter(selectedFValue ?? 5.6);
+                previewCtx.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
+            }
+            rafId = requestAnimationFrame(render);
+        };
+        rafId = requestAnimationFrame(render);
     }
 
-    // --- 画面切替 ---
+    // 画面切替ボタン
     document.getElementById('initial-next-btn')?.addEventListener('click', () => showScreen('introduction'));
     document.getElementById('intro-next-btn')?.addEventListener('click', () => showScreen('fvalue'));
 
-    // --- F値決定ボタン ---
+    // F値決定
     document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
-        selectedFValue = parseFloat(document.getElementById('aperture').value);
+        const fValue = parseFloat(document.getElementById('aperture').value);
+        selectedFValue = fValue;
         showScreen('camera');
         await startCamera('environment');
-        applyVideoFilter(selectedFValue);
-        document.getElementById('fvalue-display-camera').textContent = "F: " + selectedFValue.toFixed(1);
+        applyFilterToVideo(fValue);
+        document.getElementById('fvalue-display-camera').textContent = "F: " + fValue.toFixed(1);
     });
 
-    // --- カメラ切替 ---
+    // カメラ切替
     document.getElementById('camera-switch-btn')?.addEventListener('click', async () => {
         const newMode = isFrontCamera ? 'environment' : 'user';
         await startCamera(newMode);
-        applyVideoFilter(selectedFValue);
+        if (selectedFValue !== null) applyFilterToVideo(selectedFValue);
     });
 
-    // --- F値操作（ピンチ対応） ---
+    // F値操作
     const apertureControl = document.querySelector('.aperture-control');
     const fValueDisplay = document.getElementById('f-value-display');
     const apertureInput = document.getElementById('aperture');
@@ -72,10 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function sizeToF(size) { return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF); }
 
     if (apertureControl && fValueDisplay && apertureInput) {
-        const initialSize = fToSize(selectedFValue);
+        const initialF = 32.0;
+        const initialSize = fToSize(initialF);
         apertureControl.style.width = apertureControl.style.height = `${initialSize}px`;
-        fValueDisplay.textContent = selectedFValue.toFixed(1);
-        apertureInput.value = selectedFValue.toFixed(1);
+        fValueDisplay.textContent = initialF.toFixed(1);
+        apertureInput.value = initialF.toFixed(1);
     }
 
     let lastDistance = null;
@@ -96,37 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
             apertureControl.style.width = apertureControl.style.height = `${newSize}px`;
             fValueDisplay.textContent = newF.toFixed(1);
             apertureInput.value = newF.toFixed(1);
-            selectedFValue = newF;
-            applyVideoFilter(selectedFValue);
             lastDistance = getDistance(e.touches[0], e.touches[1]);
         }
     }, { passive: false });
 
     document.body.addEventListener('touchend', () => lastDistance = null);
 
-    // --- 撮影機能 + ギャラリー表示 ---
-    const canvas = document.getElementById('canvas');
-    canvas.style.display = 'none'; // 非表示
-    const video = document.getElementById('video');
-    const cameraShutterBtn = document.getElementById('camera-shutter-btn');
-
-    // ギャラリーコンテナ
-    let galleryContainer = document.getElementById('camera-gallery');
-    if (!galleryContainer) {
-        galleryContainer = document.createElement('div');
-        galleryContainer.id = 'camera-gallery';
-        galleryContainer.style.position = 'absolute';
-        galleryContainer.style.bottom = '20px';
-        galleryContainer.style.left = '50%';
-        galleryContainer.style.transform = 'translateX(-50%)';
-        galleryContainer.style.display = 'flex';
-        galleryContainer.style.gap = '10px';
-        galleryContainer.style.maxWidth = '90%';
-        galleryContainer.style.overflowX = 'auto';
-        galleryContainer.style.zIndex = '10';
-        screens.camera.appendChild(galleryContainer);
-    }
-
+    // 撮影ボタン
     cameraShutterBtn?.addEventListener('click', () => {
         if (!video.srcObject) return;
 
@@ -134,16 +148,28 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
 
-        // videoと同じフィルターをcanvasに適用
-        if (selectedFValue >= 1.2 && selectedFValue < 5.6) ctx.filter = 'saturate(1.5) contrast(1.2)';
-        else if (selectedFValue >= 5.6 && selectedFValue < 16.0) ctx.filter = 'none';
-        else ctx.filter = 'brightness(0.9) contrast(1.1)';
-
+        ctx.filter = getFilter(selectedFValue ?? 5.6);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         const imageDataURL = canvas.toDataURL('image/png');
 
         // ギャラリー追加
+        let galleryContainer = document.getElementById('camera-gallery');
+        if (!galleryContainer) {
+            galleryContainer = document.createElement('div');
+            galleryContainer.id = 'camera-gallery';
+            galleryContainer.style.position = 'absolute';
+            galleryContainer.style.bottom = '20px';
+            galleryContainer.style.left = '50%';
+            galleryContainer.style.transform = 'translateX(-50%)';
+            galleryContainer.style.display = 'flex';
+            galleryContainer.style.gap = '10px';
+            galleryContainer.style.maxWidth = '90%';
+            galleryContainer.style.overflowX = 'auto';
+            galleryContainer.style.zIndex = '10';
+            screens.camera.appendChild(galleryContainer);
+        }
+
         const img = document.createElement('img');
         img.src = imageDataURL;
         img.style.width = '80px';
@@ -159,6 +185,5 @@ document.addEventListener('DOMContentLoaded', () => {
         link.click();
     });
 
-    // --- 最初の画面 ---
     showScreen('initial');
 });

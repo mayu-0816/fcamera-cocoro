@@ -162,89 +162,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return g;
     }
 
-    shutterBtn?.addEventListener('click', ()=>{
-        if(!video.videoWidth) return;
+    shutterBtn?.addEventListener('click', ()=>{
+        if(!video.videoWidth) return;
+        const captureCanvas = rawCanvas || document.createElement('canvas');
+        captureCanvas.width=video.videoWidth;
+        captureCanvas.height=video.videoHeight;
+        const ctx=captureCanvas.getContext('2d');
+        
+        // フィルターを適用した画像をキャンバスに描画
+        ctx.filter = getFilter(selectedFValue); 
+        ctx.drawImage(video,0,0,captureCanvas.width,captureCanvas.height);
+        
+        // 描画されたキャンバスから画像データを取得
+        const dataURL = captureCanvas.toDataURL('image/png');
 
-        // プレビューcanvasから現在のフィルターを取得
-        const currentFilter = previewCanvas.style.filter;
-        let brightness = 1;
-        let contrast = 1;
-        let saturate = 1;
+        // ギャラリー追加
+        const gallery = ensureGallery();
+        const thumb = document.createElement('img');
+        thumb.src=dataURL; thumb.style.width='80px'; thumb.style.border='2px solid white';
+        thumb.style.cursor='pointer'; thumb.addEventListener('click',()=>window.open(dataURL,'_blank'));
+        gallery.appendChild(thumb);
 
-        // フィルター文字列を解析してパラメータを抽出
-        const filters = currentFilter.split(' ');
-        filters.forEach(filter => {
-            if (filter.startsWith('brightness')) {
-                brightness = parseFloat(filter.substring(filter.indexOf('(') + 1, filter.indexOf(')')));
-            } else if (filter.startsWith('contrast')) {
-                contrast = parseFloat(filter.substring(filter.indexOf('(') + 1, filter.indexOf(')')));
-            } else if (filter.startsWith('saturate')) {
-                saturate = parseFloat(filter.substring(filter.indexOf('(') + 1, filter.indexOf(')')));
-            }
-        });
-
-        // 一時的なcanvasを作成
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = video.videoWidth;
-        tempCanvas.height = video.videoHeight;
-        const tempCtx = tempCanvas.getContext('2d');
-
-        // 動画フレームを一時canvasに描画
-        tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-
-        // ピクセルデータを取得
-        const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-        const data = imageData.data;
-
-        // ピクセルごとにフィルターを適用
-        for (let i = 0; i < data.length; i += 4) {
-            let r = data[i];
-            let g = data[i + 1];
-            let b = data[i + 2];
-
-            // 明るさ (brightness)
-            r *= brightness;
-            g *= brightness;
-            b *= brightness;
-
-            // 彩度 (saturate)
-            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-            r = gray + saturate * (r - gray);
-            g = gray + saturate * (g - gray);
-            b = gray + saturate * (b - gray);
-            
-            // コントラスト (contrast)
-            r = (r - 128) * contrast + 128;
-            g = (g - 128) * contrast + 128;
-            b = (b - 128) * contrast + 128;
-
-            data[i] = Math.min(255, Math.max(0, r));
-            data[i + 1] = Math.min(255, Math.max(0, g));
-            data[i + 2] = Math.min(255, Math.max(0, b));
-        }
-
-        // 更新されたピクセルデータをcanvasに戻す
-        tempCtx.putImageData(imageData, 0, 0);
-
-        // 最終的な画像データを取得
-        const dataURL = tempCanvas.toDataURL('image/png');
-
-        // ギャラリー追加
-        const gallery = ensureGallery();
-        const thumb = document.createElement('img');
-        thumb.src = dataURL;
-        thumb.style.width = '80px';
-        thumb.style.border = '2px solid white';
-        thumb.style.cursor = 'pointer';
-        thumb.addEventListener('click', () => window.open(dataURL, '_blank'));
-        gallery.appendChild(thumb);
-    
-        // ダウンロード
-        const a = document.createElement('a');
-        a.href = dataURL;
-        a.download = 'cocoro_photo.png';
-        a.click();
-    });
+        // ダウンロード
+        const a = document.createElement('a'); a.href=dataURL; a.download='cocoro_photo.png'; a.click();
+    });
 
     // 初期画面
     showScreen('initial');

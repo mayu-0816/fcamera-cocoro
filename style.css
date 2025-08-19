@@ -1,9 +1,10 @@
+/* style.css */
 html, body {
     margin: 0;
     padding: 0;
     height: 100%;
     width: 100%;
-    font-family: sans-serif;
+    font-family: 'Inter', sans-serif;
     background-color: #f0f0f0;
 }
 
@@ -28,6 +29,12 @@ body {
     background: #fff;
     position: relative;
     overflow: hidden;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .screen {
@@ -50,6 +57,26 @@ body {
 .screen.active {
     opacity: 1;
     pointer-events: auto;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+p {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
 }
 
 /* F値入力画面 */
@@ -85,8 +112,10 @@ body {
 }
 
 .f-value-title {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #555;
+    margin: 0;
 }
 
 .aperture-control {
@@ -117,6 +146,7 @@ body {
     transform: translate(-50%, -50%);
     font-size: 2.5rem;
     font-weight: bold;
+    color: #333;
 }
 
 .description-text p {
@@ -126,7 +156,7 @@ body {
     margin: 0;
 }
 
-#f-value-decide-btn, #splash-next-btn, .camera-btn {
+button {
     padding: 15px 40px;
     font-size: 16px;
     font-weight: bold;
@@ -135,6 +165,17 @@ body {
     background-color: black;
     color: white;
     border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+
+button:active {
+    transform: translateY(0);
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
@@ -179,6 +220,9 @@ body {
     padding: 10px;
     color: white;
     font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+    border-radius: 10px;
 }
 
 .camera-ui-bottom {
@@ -187,4 +231,37 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 0 20px;
+}
+
+#camera-shutter-btn {
+    padding: 20px 40px;
+    border: 3px solid white;
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    backdrop-filter: blur(5px);
+}
+
+#camera-gallery {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    max-width: 90%;
+    overflow-x: auto;
+    padding: 5px;
+    z-index: 10;
+}
+
+#camera-gallery img {
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+
+#camera-gallery img:hover {
+    transform: scale(1.05);
 }

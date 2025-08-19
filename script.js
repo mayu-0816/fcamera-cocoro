@@ -19,7 +19,6 @@
         }
 
         body {
-            /* 修正点: 画面の中央に配置するためのFlexboxプロパティを再確認 */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -36,7 +35,6 @@
             background: #fff;
             position: relative;
             overflow: hidden;
-            /* 修正点: コンテナを中央に配置する絶対的な方法を追加 */
             position: absolute;
             top: 50%;
             left: 50%;
@@ -139,7 +137,7 @@
             margin: 0;
         }
 
-        #f-value-decide-btn, #splash-next-btn, .camera-btn {
+        #f-value-decide-btn, .camera-btn {
             padding: 15px 40px;
             font-size: 16px;
             font-weight: bold;
@@ -264,6 +262,7 @@
         <div id="screen-initial" class="screen active">
             <h1>ココロカメラ</h1>
             <p>あなたの心のシャッターを切る</p>
+            <!-- 修正点: idを追加して、JavaScriptで参照できるようにする -->
             <button id="initial-next-btn" class="camera-btn">始める</button>
         </div>
 
@@ -274,6 +273,7 @@
                 「ココロカメラ」は、あなたの今の心の状態を写真に映し出します。<br>
                 まずは今の心の状態に近い「絞り値(F値)」を選んでください。
             </p>
+            <!-- 修正点: idを追加して、JavaScriptで参照できるようにする -->
             <button id="intro-next-btn" class="camera-btn">次へ</button>
         </div>
 

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 画面要素をIDに合わせて定義
+    // 画面要素
     const screens = {
         initial: document.getElementById('screen-initial'),
         introduction: document.getElementById('screen-introduction'),
@@ -14,20 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentStream = null;
     let isFrontCamera = false;
-    let selectedFValue = null;
+    let selectedFValue = 32.0; // 初期値
 
-    const video = document.createElement('video');
-    video.playsInline = true;
-    video.autoplay = true;
-    video.style.display = 'none'; // 非表示にしてcanvas表示
-
-    screens.camera.appendChild(video);
-
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-
-    // カメラ起動
+    // --- カメラ起動 ---
     async function startCamera(facingMode = 'environment') {
+        const video = document.getElementById('video');
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
         const constraints = { video: { facingMode: facingMode === 'environment' ? { exact: "environment" } : "user" } };
         try {
@@ -36,53 +27,90 @@ document.addEventListener('DOMContentLoaded', () => {
             await video.play();
             currentStream = stream;
             isFrontCamera = (facingMode === 'user');
-            requestAnimationFrame(updateCanvas); // 描画ループ開始
         } catch (err) {
             console.error("カメラへのアクセス拒否:", err);
             alert("カメラを起動できませんでした。アクセスを許可してください。");
         }
     }
 
-    // F値に応じたフィルター（canvas用）
-    function getCanvasFilter(fValue) {
-        if (fValue >= 1.2 && fValue < 5.6) return 'saturate(1.5) contrast(1.2)';
-        if (fValue >= 16.0) return 'brightness(0.9) contrast(1.1)';
-        return 'none';
+    // --- videoプレビューにフィルター反映 ---
+    function applyVideoFilter(fValue) {
+        const video = document.getElementById('video');
+        if (fValue >= 1.2 && fValue < 5.6) video.style.filter = 'saturate(1.5) contrast(1.2)';
+        else if (fValue >= 5.6 && fValue < 16.0) video.style.filter = 'none';
+        else video.style.filter = 'brightness(0.9) contrast(1.1)';
     }
 
-    // canvas描画ループ（videoからコピー＆フィルター適用）
-    function updateCanvas() {
-        if (video.videoWidth && video.videoHeight) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.filter = getCanvasFilter(selectedFValue || 1.2);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        }
-        requestAnimationFrame(updateCanvas);
-    }
-
-    // ボタンクリックで画面切替
+    // --- 画面切替 ---
     document.getElementById('initial-next-btn')?.addEventListener('click', () => showScreen('introduction'));
     document.getElementById('intro-next-btn')?.addEventListener('click', () => showScreen('fvalue'));
 
-    // F値決定ボタン
+    // --- F値決定ボタン ---
     document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
-        const fValue = parseFloat(document.getElementById('aperture').value);
-        selectedFValue = fValue;
+        selectedFValue = parseFloat(document.getElementById('aperture').value);
         showScreen('camera');
         await startCamera('environment');
-        document.getElementById('fvalue-display-camera').textContent = "F: " + fValue.toFixed(1);
+        applyVideoFilter(selectedFValue);
+        document.getElementById('fvalue-display-camera').textContent = "F: " + selectedFValue.toFixed(1);
     });
 
-    // カメラ切替
+    // --- カメラ切替 ---
     document.getElementById('camera-switch-btn')?.addEventListener('click', async () => {
         const newMode = isFrontCamera ? 'environment' : 'user';
         await startCamera(newMode);
+        applyVideoFilter(selectedFValue);
     });
 
+    // --- F値操作（ピンチ対応） ---
+    const apertureControl = document.querySelector('.aperture-control');
+    const fValueDisplay = document.getElementById('f-value-display');
+    const apertureInput = document.getElementById('aperture');
+    const minF = 1.2, maxF = 32.0;
+    const minSize = 100, maxSize = 250;
+
+    function fToSize(f) { return minSize + ((maxF - f) / (maxF - minF)) * (maxSize - minSize); }
+    function sizeToF(size) { return maxF - ((size - minSize) / (maxSize - minSize)) * (maxF - minF); }
+
+    if (apertureControl && fValueDisplay && apertureInput) {
+        const initialSize = fToSize(selectedFValue);
+        apertureControl.style.width = apertureControl.style.height = `${initialSize}px`;
+        fValueDisplay.textContent = selectedFValue.toFixed(1);
+        apertureInput.value = selectedFValue.toFixed(1);
+    }
+
+    let lastDistance = null;
+    function getDistance(t1, t2) { return Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY); }
+
+    document.body.addEventListener('touchstart', e => {
+        if (!screens.fvalue?.classList.contains('active')) return;
+        if (e.touches.length === 2) { e.preventDefault(); lastDistance = getDistance(e.touches[0], e.touches[1]); }
+    }, { passive: false });
+
+    document.body.addEventListener('touchmove', e => {
+        if (!screens.fvalue?.classList.contains('active')) return;
+        if (e.touches.length === 2 && lastDistance) {
+            e.preventDefault();
+            const delta = getDistance(e.touches[0], e.touches[1]) - lastDistance;
+            const newSize = Math.max(minSize, Math.min(maxSize, apertureControl.offsetWidth + delta));
+            const newF = sizeToF(newSize);
+            apertureControl.style.width = apertureControl.style.height = `${newSize}px`;
+            fValueDisplay.textContent = newF.toFixed(1);
+            apertureInput.value = newF.toFixed(1);
+            selectedFValue = newF;
+            applyVideoFilter(selectedFValue);
+            lastDistance = getDistance(e.touches[0], e.touches[1]);
+        }
+    }, { passive: false });
+
+    document.body.addEventListener('touchend', () => lastDistance = null);
+
     // --- 撮影機能 + ギャラリー表示 ---
+    const canvas = document.getElementById('canvas');
+    canvas.style.display = 'none'; // 非表示
+    const video = document.getElementById('video');
     const cameraShutterBtn = document.getElementById('camera-shutter-btn');
 
+    // ギャラリーコンテナ
     let galleryContainer = document.getElementById('camera-gallery');
     if (!galleryContainer) {
         galleryContainer = document.createElement('div');
@@ -102,10 +130,20 @@ document.addEventListener('DOMContentLoaded', () => {
     cameraShutterBtn?.addEventListener('click', () => {
         if (!video.srcObject) return;
 
-        // canvasに描画済みなのでそのまま保存
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+
+        // videoと同じフィルターをcanvasに適用
+        if (selectedFValue >= 1.2 && selectedFValue < 5.6) ctx.filter = 'saturate(1.5) contrast(1.2)';
+        else if (selectedFValue >= 5.6 && selectedFValue < 16.0) ctx.filter = 'none';
+        else ctx.filter = 'brightness(0.9) contrast(1.1)';
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
         const imageDataURL = canvas.toDataURL('image/png');
 
-        // ギャラリーに追加
+        // ギャラリー追加
         const img = document.createElement('img');
         img.src = imageDataURL;
         img.style.width = '80px';
@@ -121,5 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         link.click();
     });
 
+    // --- 最初の画面 ---
     showScreen('initial');
 });

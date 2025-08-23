@@ -312,20 +312,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = captureCanvas.getContext('2d');
 
     // 露光シミュレーション：露光時間中、複数フレームを平均合成
-    ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
-    ctx.filter = getFilter(selectedFValue);
+// 露光シミュレーション：露光時間中、複数フレームを平均合成
+　　ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
 
-    const sec = exposureTimeSec();
-    const frameRate = 30;                             // 仮想フレームレート
+　　const sec = exposureTimeSec();        // BPM → シャッタースピード秒数
+　　const frameRate = 30;                 // 仮想フレームレート
     const frameCount = Math.max(1, Math.round(sec * frameRate));
     const alpha = 1 / frameCount;
 
-    for (let i = 0; i < frameCount; i++) {
-      ctx.globalAlpha = alpha;
-      ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-      await sleep(1000 / frameRate);
-    }
-    ctx.globalAlpha = 1;
+　　for (let i = 0; i < frameCount; i++) {
+ 　　 ctx.globalAlpha = alpha;
+ 　　 ctx.filter = getFilter(selectedFValue);   // ★ ここを追加（毎フレーム適用）
+ 　　 ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+ 　　 await sleep(1000 / frameRate);
+　　}
+
+　　ctx.globalAlpha = 1;
+　　ctx.filter = "none"; // ← 念のためリセット
 
     const dataURL = captureCanvas.toDataURL('image/png');
 
@@ -348,3 +351,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------- 初期表示 --------
   showScreen('initial');
 });
+

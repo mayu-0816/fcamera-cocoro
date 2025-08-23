@@ -307,37 +307,43 @@ shutterBtn?.addEventListener('click', async () => {
   if (!video.videoWidth) return;
 
   const captureCanvas = rawCanvas || document.createElement('canvas');
-  captureCanvas.width = video.videoWidth;
-  captureCanvas.height = video.videoHeight;
-  const ctx = captureCanvas.getContext('2d');
+  // 高解像度で失敗しやすい端末向けに、最大幅を制限（任意）
+  const maxW = 1600;
+  const scale = Math.min(1, maxW / video.videoWidth);
+  captureCanvas.width  = Math.round(video.videoWidth  * scale);
+  captureCanvas.height = Math.round(video.videoHeight * scale);
 
-  // 露光シミュレーション：露光時間中、複数フレームを平均合成
+  // Safari 安定化: willReadFrequently
+  const ctx = captureCanvas.getContext('2d', { willReadFrequently: true });
+
+  // ① 露光シミュレーション（BPM＝シャッタースピード）
   const sec = exposureTimeSec();
-  const frameRate = 30; // 仮想フレームレート
+  const frameRate = 30;
   const frameCount = Math.max(1, Math.round(sec * frameRate));
   const alpha = 1 / frameCount;
 
   ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
-
   for (let i = 0; i < frameCount; i++) {
     ctx.globalAlpha = alpha;
     ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-    await sleep(1000 / frameRate);
+    await new Promise(r => setTimeout(r, 1000 / frameRate));
   }
-
   ctx.globalAlpha = 1;
 
-  // F値に応じたぼかし量を計算
-  const fValueToBlur = f => Math.max(0, 20 * (32 - f) / 31); // F値が小さいほど強くぼかす
-  const blurRadius = fValueToBlur(selectedFValue);
+  // ② F値の明暗/コントラスト/彩度をピクセル処理で反映（確実に保存に乗る）
+  applyFValuePixels(ctx, captureCanvas.width, captureCanvas.height, selectedFValue);
 
-  // StackBlur で保存用 Canvas にぼかしを適用
-  StackBlur.canvasRGBA(captureCanvas, 0, 0, captureCanvas.width, captureCanvas.height, blurRadius);
+  // ③ F値の被写界深度っぽいボケを StackBlur で反映
+  const blurRadius = fToBlurRadius(selectedFValue);
+  if (blurRadius > 0) {
+    // 端の黒ずみ防止のために一度コピー→ブラー→戻しでもOKだが、通常は直接で問題なし
+    StackBlur.canvasRGBA(captureCanvas, 0, 0, captureCanvas.width, captureCanvas.height, blurRadius);
+  }
 
-  // データURL生成
+  // ④ 保存
   const dataURL = captureCanvas.toDataURL('image/png');
 
-  // ギャラリーに追加
+  // ギャラリー
   const gallery = ensureGallery();
   const thumb = document.createElement('img');
   thumb.src = dataURL;
@@ -355,10 +361,58 @@ shutterBtn?.addEventListener('click', async () => {
   a.click();
 });
 
+// F値→パラメータ（プレビューで使っている式を流用）
+function fParams(f) {
+  const brightness = Math.max(0.7, Math.min(1.5, 2.5 / f));
+  const saturate   = Math.max(0.5, Math.min(2.0, 2.0 - f / 32));
+  const contrast   = Math.max(0.8, Math.min(1.3, 1.0 + (8 / f) * 0.05));
+  // blur は StackBlur に任せる
+  return { brightness, contrast, saturate };
+}
+
+// 画素ごとの明るさ/コントラスト/彩度を適用（CSS依存ナシ）
+function applyFValuePixels(ctx, w, h, f) {
+  const { brightness, contrast, saturate } = fParams(f);
+  // Safari対策で willReadFrequently 指定
+  const id = ctx.getImageData(0, 0, w, h);
+  const data = id.data;
+
+  const adj = (v) => {
+    // 明るさ→コントラスト（簡易式）
+    let x = v * brightness;
+    x = ((x - 128) * contrast) + 128;
+    return x < 0 ? 0 : x > 255 ? 255 : x;
+  };
+
+  for (let i = 0; i < data.length; i += 4) {
+    // 明るさ/コントラスト
+    let r = adj(data[i]), g = adj(data[i+1]), b = adj(data[i+2]);
+
+    // 彩度（平均からの乖離を増減）
+    const avg = (r + g + b) / 3;
+    r = avg + (r - avg) * saturate;
+    g = avg + (g - avg) * saturate;
+    b = avg + (b - avg) * saturate;
+
+    data[i]   = r < 0 ? 0 : r > 255 ? 255 : r;
+    data[i+1] = g < 0 ? 0 : g > 255 ? 255 : g;
+    data[i+2] = b < 0 ? 0 : b > 255 ? 255 : b;
+    // αはそのまま
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+// F値→ぼかし半径（StackBlur 用）
+function fToBlurRadius(f) {
+  // 開放で強ぼけ、F32でほぼゼロ。好みに合わせて係数は調整可
+  return Math.max(0, Math.round(18 * (1.2 / f))); 
+}
+
 
   // -------- 初期表示 --------
   showScreen('initial');
 });
+
 
 
 

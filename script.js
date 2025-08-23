@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-  shutterBtn?.addEventListener('click', async () => {
+shutterBtn?.addEventListener('click', async () => {
     if (!video.videoWidth) return;
 
     const captureCanvas = rawCanvas || document.createElement('canvas');
@@ -311,28 +311,24 @@ document.addEventListener('DOMContentLoaded', () => {
     captureCanvas.height = video.videoHeight;
     const ctx = captureCanvas.getContext('2d');
 
-    // 露光シミュレーション：露光時間中、複数フレームを平均合成
-// 露光シミュレーション：露光時間中、複数フレームを平均合成
-　　ctx.filter = getFilter(selectedFValue); 
-    ctx.drawImage(video,0,0,captureCanvas.width,captureCanvas.height);
-
-    const sec = exposureTimeSec();
-    const frameRate = 30; // 仮想フレームレート
+    const sec = exposureTimeSec();  // BPMで計算する露光時間
+    const frameRate = 30;
     const frameCount = Math.max(1, Math.round(sec * frameRate));
     const alpha = 1 / frameCount;
 
-　　for (let i = 0; i < frameCount; i++) {
-        ctx.filter = getFilter(selectedFValue); // ← ここをフレームごとに適用
+    ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
+
+    for (let i = 0; i < frameCount; i++) {
+        ctx.filter = getFilter(selectedFValue);  // ← 毎フレーム適用
         ctx.globalAlpha = alpha;
         ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
         await sleep(1000 / frameRate);
-　　}
-　　ctx.globalAlpha = 1;
-　　ctx.filter = "none"; // ← 念のためリセット
+    }
+    ctx.globalAlpha = 1;
+    ctx.filter = 'none';  // 描画後リセット
 
+    // 保存・ギャラリー
     const dataURL = captureCanvas.toDataURL('image/png');
-
-    // ギャラリー
     const gallery = ensureGallery();
     const thumb = document.createElement('img');
     thumb.src = dataURL;
@@ -343,13 +339,16 @@ document.addEventListener('DOMContentLoaded', () => {
     thumb.addEventListener('click', () => window.open(dataURL, '_blank'));
     gallery.appendChild(thumb);
 
-    // ダウンロード
+    // 自動ダウンロード
     const a = document.createElement('a');
-    a.href = dataURL; a.download = 'cocoro_photo.png'; a.click();
-  });
+    a.href = dataURL;
+    a.download = 'cocoro_photo.png';
+    a.click();
+});
 
   // -------- 初期表示 --------
   showScreen('initial');
 });
+
 
 

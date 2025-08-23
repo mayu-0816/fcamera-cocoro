@@ -321,13 +321,18 @@ shutterBtn?.addEventListener('click', async () => {
 
   for (let i = 0; i < frameCount; i++) {
     ctx.globalAlpha = alpha;
-    ctx.filter = getFilter(selectedFValue); // ← ここで毎フレーム適用
     ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
     await sleep(1000 / frameRate);
   }
 
   ctx.globalAlpha = 1;
-  ctx.filter = 'none'; // 念のためリセット
+
+  // F値に応じたぼかし量を計算
+  const fValueToBlur = f => Math.max(0, 20 * (32 - f) / 31); // F値が小さいほど強くぼかす
+  const blurRadius = fValueToBlur(selectedFValue);
+
+  // StackBlur で保存用 Canvas にぼかしを適用
+  StackBlur.canvasRGBA(captureCanvas, 0, 0, captureCanvas.width, captureCanvas.height, blurRadius);
 
   // データURL生成
   const dataURL = captureCanvas.toDataURL('image/png');
@@ -349,11 +354,10 @@ shutterBtn?.addEventListener('click', async () => {
   a.download = 'cocoro_photo.png';
   a.click();
 });
-
-
   // -------- 初期表示 --------
   showScreen('initial');
 });
+
 
 
 

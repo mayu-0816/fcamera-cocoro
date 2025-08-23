@@ -6,11 +6,11 @@
   <title>ココロカメラ</title>
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- StackBlur.js の読み込み -->
+  <!-- StackBlur.js を先に読み込む -->
   <script src="https://cdn.jsdelivr.net/gh/flozz/StackBlur/stackblur.min.js"></script>
 
-  <!-- メインのJSを defer で読み込み -->
-  <script src="./main.js" defer></script>
+  <!-- アプリ本体は 1 本だけ（script.js に統一） -->
+  <script src="./script.js" defer></script>
 </head>
 <body>
 
@@ -88,7 +88,5 @@
     </div>
   </div>
 
-  <script src="./script.js" defer></script>
 </body>
 </html>
-

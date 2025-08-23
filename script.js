@@ -311,61 +311,28 @@ shutterBtn?.addEventListener('click', async () => {
   captureCanvas.height = video.videoHeight;
   const ctx = captureCanvas.getContext('2d');
 
-  // まず動画を描画
-  ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-
-  // F値フィルターを取得
-  const filter = getFilter(selectedFValue);
-
-  // 簡易パース（brightness / contrast / saturate / blur は CSS 形式なので値を取得）
-  const match = /brightness\(([^)]+)\)\s*contrast\(([^)]+)\)\s*saturate\(([^)]+)\)/.exec(filter);
-  const brightness = match ? parseFloat(match[1]) : 1;
-  const contrast   = match ? parseFloat(match[2]) : 1;
-  const saturate   = match ? parseFloat(match[3]) : 1;
-
-  // Canvas のピクセルデータを取得
-  const imageData = ctx.getImageData(0, 0, captureCanvas.width, captureCanvas.height);
-  const data = imageData.data;
-
-  // ピクセル単位で適用
-  const adjust = (value) => {
-    // brightness & simple contrast
-    let v = value * brightness;
-    v = ((v - 128) * contrast) + 128; // 簡易コントラスト
-    return Math.min(255, Math.max(0, v));
-  };
-
-  for (let i = 0; i < data.length; i += 4) {
-    // RGB に対して調整
-    data[i + 0] = adjust(data[i + 0]); // R
-    data[i + 1] = adjust(data[i + 1]); // G
-    data[i + 2] = adjust(data[i + 2]); // B
-
-    // 簡易 saturate: R,G,B の平均との差を増幅
-    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-    data[i + 0] += (data[i + 0] - avg) * (saturate - 1);
-    data[i + 1] += (data[i + 1] - avg) * (saturate - 1);
-    data[i + 2] += (data[i + 2] - avg) * (saturate - 1);
-  }
-
-  // 加工済みデータを反映
-  ctx.putImageData(imageData, 0, 0);
-
-  // 露光シミュレーション（シャッタースピード / BPM）
+  // 露光シミュレーション：露光時間中、複数フレームを平均合成
   const sec = exposureTimeSec();
   const frameRate = 30; // 仮想フレームレート
   const frameCount = Math.max(1, Math.round(sec * frameRate));
   const alpha = 1 / frameCount;
 
+  ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
+
   for (let i = 0; i < frameCount; i++) {
     ctx.globalAlpha = alpha;
+    ctx.filter = getFilter(selectedFValue); // ← ここで毎フレーム適用
     ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
     await sleep(1000 / frameRate);
   }
-  ctx.globalAlpha = 1;
 
-  // ギャラリー
+  ctx.globalAlpha = 1;
+  ctx.filter = 'none'; // 念のためリセット
+
+  // データURL生成
   const dataURL = captureCanvas.toDataURL('image/png');
+
+  // ギャラリーに追加
   const gallery = ensureGallery();
   const thumb = document.createElement('img');
   thumb.src = dataURL;
@@ -378,12 +345,16 @@ shutterBtn?.addEventListener('click', async () => {
 
   // ダウンロード
   const a = document.createElement('a');
-  a.href = dataURL; a.download = 'cocoro_photo.png'; a.click();
+  a.href = dataURL;
+  a.download = 'cocoro_photo.png';
+  a.click();
 });
+
 
   // -------- 初期表示 --------
   showScreen('initial');
 });
+
 
 
 

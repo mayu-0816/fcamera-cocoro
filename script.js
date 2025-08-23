@@ -1,4 +1,4 @@
-// ココロカメラ：F値 → BPM → シャッタースピード反映 撮影（保存に確実反映版）
+// ココロカメラ：F値 → BPM → シャッタースピード反映 撮影（保存とプレビューを一致）
 document.addEventListener('DOMContentLoaded', () => {
   // -------- 画面管理 --------
   const screens = {
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const video = document.getElementById('video');
   const rawCanvas = document.getElementById('canvas');
 
-  // プレビュー用 Canvas（プレビューはCSS filter）
+  // プレビュー用（実表示）キャンバス
   const previewCanvas = document.createElement('canvas');
   const previewCtx = previewCanvas.getContext('2d');
   if (screens.camera) {
@@ -29,13 +29,20 @@ document.addEventListener('DOMContentLoaded', () => {
     screens.camera.insertBefore(previewCanvas, screens.camera.firstChild);
   }
 
+  // プレビュー処理用の低解像度キャンバス（負荷軽減）
+  const procCanvas = document.createElement('canvas');
+  const procCtx = procCanvas.getContext('2d', { willReadFrequently: true });
+  const PREVIEW_MAX_W = 640;   // 端末が重いなら 480 などに下げる
+  const PREVIEW_FPS   = 15;    // 端末が重いなら 12〜10 に下げる
+  let lastPreviewTs = 0;
+
   let currentStream = null;
   let isFrontCamera = false;
   let selectedFValue = 32.0;    // F値
   let lastMeasuredBpm = 0;      // BPM（計測結果）
   const defaultBpm = 60;        // フォールバック
 
-  // -------- F値 → パラメータとプレビュー用フィルタ --------
+  // -------- F値 → パラメータ／ぼけ半径 --------
   function fParams(f) {
     const brightness = Math.max(0.7, Math.min(1.5, 2.5 / f));
     const saturate   = Math.max(0.5, Math.min(2.0, 2.0 - f / 32));
@@ -43,32 +50,61 @@ document.addEventListener('DOMContentLoaded', () => {
     return { brightness, contrast, saturate };
   }
   function fToBlurRadius(f) {
-    // 保存側（StackBlur）用の半径：開放で強ぼけ、F32でほぼゼロ
+    // 保存＆プレビュー共通：開放で強ぼけ、F32でほぼゼロ
     return Math.max(0, Math.round(18 * (1.2 / f)));
   }
-  function getFilter(fValue) {
-    // プレビュー（CSS filter）を保存側のStackBlurと近づけるための係数 0.6
-    const { brightness, contrast, saturate } = fParams(fValue);
-    const cssBlurPx = Math.round(fToBlurRadius(fValue) * 0.6);
-    return `brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(${cssBlurPx}px)`;
-  }
 
-  // プレビューループ
+  // -------- プレビューループ（保存と同じ処理パス） --------
   let rafId = null;
   function startPreviewLoop() {
     if (rafId) cancelAnimationFrame(rafId);
-    const render = () => {
+
+    const render = (ts) => {
       if (video.videoWidth && video.videoHeight) {
+        // 実表示キャンバスは動画サイズに合わせる（等倍で描画）
         if (previewCanvas.width !== video.videoWidth || previewCanvas.height !== video.videoHeight) {
-          previewCanvas.width = video.videoWidth;
+          previewCanvas.width  = video.videoWidth;
           previewCanvas.height = video.videoHeight;
         }
-        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        previewCanvas.style.filter = getFilter(selectedFValue);
-        previewCtx.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
+
+        // 処理レート制限
+        const interval = 1000 / PREVIEW_FPS;
+        const shouldProcess = (ts - lastPreviewTs) >= interval;
+
+        if (shouldProcess) {
+          lastPreviewTs = ts;
+
+          // 低解像度で処理
+          const scale = Math.min(1, PREVIEW_MAX_W / video.videoWidth);
+          const w = Math.max(1, Math.round(video.videoWidth  * scale));
+          const h = Math.max(1, Math.round(video.videoHeight * scale));
+          if (procCanvas.width !== w || procCanvas.height !== h) {
+            procCanvas.width = w;
+            procCanvas.height = h;
+          }
+
+          // 1) 動画 → 処理キャンバス
+          procCtx.clearRect(0, 0, w, h);
+          procCtx.drawImage(video, 0, 0, w, h);
+
+          // 2) F値の明暗/コントラスト/彩度（保存と同じ関数）
+          applyFValuePixels(procCtx, w, h, selectedFValue);
+
+          // 3) F値のぼけ（保存と同じ StackBlur）
+          const blurRadius = fToBlurRadius(selectedFValue);
+          if (blurRadius > 0 && window.StackBlur?.canvasRGBA) {
+            StackBlur.canvasRGBA(procCanvas, 0, 0, w, h, blurRadius);
+          }
+
+          // 4) 処理済みフレームを実表示キャンバスへ拡大描画
+          previewCtx.imageSmoothingEnabled = true;
+          previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+          previewCtx.drawImage(procCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+        }
       }
       rafId = requestAnimationFrame(render);
     };
+
     rafId = requestAnimationFrame(render);
   }
   function stopPreviewLoop(){ if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
@@ -80,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const constraints = {
         video: {
           facingMode: facingMode === 'environment' ? { ideal: 'environment' } : 'user',
-          width: { ideal: 1280 }, height: { ideal: 720 } // 安定動作向け解像度
+          width: { ideal: 1280 }, height: { ideal: 720 } // 安定動作向け
         },
         audio: false
       };
@@ -107,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedFValue = f;
     document.querySelector('.aperture-control')?.setAttribute('aria-valuenow', f.toFixed(1));
     showScreen('bpm');
-    await startBpmCamera(); // BPM計測用カメラ起動
+    await startBpmCamera();
   });
 
   // カメラ切替（撮影画面）
@@ -312,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // StackBlur ロード確認（デバッグ用）
   if (!window.StackBlur || !StackBlur.canvasRGBA) {
-    console.warn('StackBlurが読み込まれていません（保存時のボケはスキップされます）');
+    console.warn('StackBlurが読み込まれていません（プレビュー/保存時のボケはスキップされます）');
   }
 
   shutterBtn?.addEventListener('click', async () => {
@@ -390,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // -------- 画像処理（保存焼き込み用） --------
+  // -------- 画像処理（保存/プレビューパイプライン共通） --------
   function applyFValuePixels(ctx, w, h, f) {
     const { brightness, contrast, saturate } = fParams(f);
     const id = ctx.getImageData(0, 0, w, h);
@@ -398,13 +434,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const adj = (v) => {
       let x = v * brightness;
-      x = ((x - 128) * contrast) + 128;         // 簡易コントラスト
+      x = ((x - 128) * contrast) + 128; // 簡易コントラスト
       return x < 0 ? 0 : x > 255 ? 255 : x;
     };
 
     for (let i = 0; i < data.length; i += 4) {
       let r = adj(data[i]), g = adj(data[i+1]), b = adj(data[i+2]);
-      const avg = (r + g + b) / 3;              // 彩度（平均との差分を増減）
+      const avg = (r + g + b) / 3;      // 彩度（平均との差分を増減）
       r = avg + (r - avg) * saturate;
       g = avg + (g - avg) * saturate;
       b = avg + (b - avg) * saturate;

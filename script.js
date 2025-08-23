@@ -311,17 +311,27 @@ shutterBtn?.addEventListener('click', async () => {
   captureCanvas.height = video.videoHeight;
   const ctx = captureCanvas.getContext('2d');
 
-  // まず動画を Canvas に描画
-  ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+  // 露光シミュレーション：露光時間中、複数フレームを平均合成
+  const sec = exposureTimeSec();
+  const frameRate = 30; // 仮想フレームレート
+  const frameCount = Math.max(1, Math.round(sec * frameRate));
+  const alpha = 1 / frameCount;
 
-  // F値に応じて明暗調整
-  const brightness = 1 + (32 - selectedFValue) / 32; // 例: F値が小さいほど明るく
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.filter = `brightness(${brightness})`;
-  ctx.drawImage(captureCanvas, 0, 0);
+  ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
 
-  // StackBlur でボケを適用
-  const blurRadius = Math.max(0, 32 - selectedFValue); // F値が小さいほどボケ大
+  for (let i = 0; i < frameCount; i++) {
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+    await sleep(1000 / frameRate);
+  }
+
+  ctx.globalAlpha = 1;
+
+  // F値に応じたぼかし量を計算
+  const fValueToBlur = f => Math.max(0, 20 * (32 - f) / 31); // F値が小さいほど強くぼかす
+  const blurRadius = fValueToBlur(selectedFValue);
+
+  // StackBlur で保存用 Canvas にぼかしを適用
   StackBlur.canvasRGBA(captureCanvas, 0, 0, captureCanvas.width, captureCanvas.height, blurRadius);
 
   // データURL生成
@@ -345,9 +355,11 @@ shutterBtn?.addEventListener('click', async () => {
   a.click();
 });
 
+
   // -------- 初期表示 --------
   showScreen('initial');
 });
+
 
 
 

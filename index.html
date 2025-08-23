@@ -5,8 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
   <title>ココロカメラ</title>
   <link rel="stylesheet" href="./style.css" />
+
+  <!-- StackBlur.js の読み込み -->
+  <script src="https://cdn.jsdelivr.net/gh/flozz/StackBlur/stackblur.min.js"></script>
+
+  <!-- メインのJSを defer で読み込み -->
+  <script src="./main.js" defer></script>
 </head>
 <body>
+
   <div class="app-container">
     <!-- 画面１：スプラッシュ -->
     <div id="screen-initial" class="screen active" aria-hidden="false">
@@ -84,3 +91,4 @@
   <script src="./script.js" defer></script>
 </body>
 </html>
+

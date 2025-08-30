@@ -1,4 +1,5 @@
-// ココロカメラ：F値 → BPM → シャッタースピード反映 撮影（保存とプレビューを一致・BPM=1/SS）
+// ココロカメラ：F値 → BPM → シャッタースピード反映 撮影
+// 保存とプレビューの見た目を一致＋撮影履歴は情報ボタンでモーダル表示
 document.addEventListener('DOMContentLoaded', () => {
   // -------- 画面管理 --------
   const screens = {
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------- 辞書（文言を一元管理） --------
   const T = {
     appTitle: "ココロカメラ",
-    splashTagline: "あなたの心とカメラのコラボレーション",
+    splashTagline: "あなたの心のシャッターを切る",
     start: "はじめる",
     next: "次へ",
 
@@ -45,8 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
     bpmResult: (bpm) => `推定BPM: ${bpm}`,
     cameraError: "カメラを起動できません。端末の設定からカメラ権限を許可してください。"
   };
-
-  // data-i18n / data-i18n-html に辞書を流し込む
   function applyTexts(dict) {
     document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.dataset.i18n;
@@ -61,7 +60,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   applyTexts(T);
 
-  // -------- カメラ（撮影プレビュー） --------
+  // ====== 共有の状態 ======
+  let currentStream = null;
+  let isFrontCamera = false;
+  let selectedFValue = 32.0;    // F値
+  let lastMeasuredBpm = 0;      // BPM（計測結果）
+  const defaultBpm = 60;        // フォールバック
+  const savedPhotos = [];       // 撮影履歴（モーダルで表示）
+
+  // ====== カメラ（撮影プレビュー） ======
   const video = document.getElementById('video');
   const rawCanvas = document.getElementById('canvas');
 
@@ -78,15 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // プレビュー処理用の低解像度キャンバス（負荷軽減）
   const procCanvas = document.createElement('canvas');
   const procCtx = procCanvas.getContext('2d', { willReadFrequently: true });
-  const PREVIEW_MAX_W = 640;
-  const PREVIEW_FPS   = 15;
+  const PREVIEW_MAX_W = 640;   // 端末が重いなら 480 などに下げる
+  const PREVIEW_FPS   = 15;    // 端末が重いなら 12〜10 に下げる
   let lastPreviewTs = 0;
-
-  let currentStream = null;
-  let isFrontCamera = false;
-  let selectedFValue = 32.0;    // F値
-  let lastMeasuredBpm = 0;      // BPM（計測結果）
-  const defaultBpm = 60;        // フォールバック
 
   // -------- F値 → パラメータ／ぼけ半径 --------
   function fParams(f) {
@@ -107,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const render = (ts) => {
       if (video.videoWidth && video.videoHeight) {
-        // 実表示キャンバスは動画サイズに合わせる
+        // 実表示キャンバスは動画サイズに合わせる（等倍で描画）
         if (previewCanvas.width !== video.videoWidth || previewCanvas.height !== video.videoHeight) {
           previewCanvas.width  = video.videoWidth;
           previewCanvas.height = video.videoHeight;
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const constraints = {
         video: {
           facingMode: facingMode === 'environment' ? { ideal: 'environment' } : 'user',
-          width: { ideal: 1280 }, height: { ideal: 720 }
+          width: { ideal: 1280 }, height: { ideal: 720 } // 安定動作向け
         },
         audio: false
       };
@@ -363,36 +364,24 @@ document.addEventListener('DOMContentLoaded', () => {
     await startCamera('environment');
   });
 
-  // -------- 撮影（BPM→シャッタースピード反映 + F値焼き込み） --------
+  // -------- シャッタースピード（BPM→SS） --------
   const shutterBtn = document.getElementById('camera-shutter-btn');
   const bpmHud = document.getElementById('bpm-display-camera');
 
-  // ★ここをBPM=分母に変更（1/BPM 秒, 下限1/240s, 上限2s）
+  // 実BPMを露光時間に直結したい場合はここを調整（例: SS = 60/BPM）
   function exposureTimeSec() {
     const bpm = lastMeasuredBpm || defaultBpm;
-    return Math.min(2.0, Math.max(1 / 240, 1 / bpm));
+    // 1拍(60/BPM 秒)をベースに、極端な値をクランプ
+    return Math.min(2.0, Math.max(0.1, 60 / bpm));
   }
-
   function exposureLabel(sec) {
-    if (sec >= 1) return `${sec.toFixed(1)}s`;
-    const denom = Math.round(1 / sec);
-    return `1/${denom}s`;
+    return sec >= 1 ? `${sec.toFixed(1)}s` : `1/${Math.round(1 / sec)}s`;
   }
   function updateCameraHudBpm() {
     const sec = exposureTimeSec();
     bpmHud.textContent = `BPM: ${lastMeasuredBpm || '--'} / SS: ${exposureLabel(sec)}`;
   }
   updateCameraHudBpm();
-
-  const ensureGallery = () => {
-    let g = document.getElementById('camera-gallery');
-    if (!g) {
-      g = document.createElement('div');
-      g.id = 'camera-gallery';
-      screens.camera.appendChild(g);
-    }
-    return g;
-  };
 
   const sleep = ms => new Promise(res => setTimeout(res, ms));
 
@@ -405,7 +394,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function fmtShutterLabel(sec) {
     return sec >= 1 ? `${sec.toFixed(1)}s` : `1-${Math.round(1/sec)}`;
   }
-  function safeNum(n) { return String(n).replace('.', '-'); }
+  function safeNum(n) {
+    return String(n).replace('.', '-');
+  }
   function buildFilename({ fValue, bpm, shutterSec, when = new Date(), who = 'anon', room = 'room' }) {
     const pad = (x) => x.toString().padStart(2, '0');
     const y = when.getFullYear();
@@ -414,13 +405,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const hh = pad(when.getHours());
     const mm = pad(when.getMinutes());
     const ss = pad(when.getSeconds());
+
     const fStr = safeNum(Number(fValue).toFixed(1));
     const bpmStr = bpm ?? '--';
     const ssStr = fmtShutterLabel(shutterSec);
+
     return `cocoro_${y}-${m}-${d}_${hh}-${mm}-${ss}_${room}_${who}_F${fStr}_BPM${bpmStr}_SS${ssStr}.png`;
   }
 
-  // シャッター処理
+  // ====== 撮影処理 ======
   shutterBtn?.addEventListener('click', async () => {
     try {
       if (!video.videoWidth) return;
@@ -435,25 +428,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const ctx = captureCanvas.getContext('2d', { willReadFrequently: true });
 
-      // ① 露光シミュレーション（BPM＝分母）
+      // ① 露光シミュレーション（BPM＝シャッタースピード）
       const sec = exposureTimeSec();
       const frameRate = 30;
       const frameCount = Math.max(1, Math.round(sec * frameRate));
-      const alpha = 1 / Math.max(1, frameCount);
+      const alpha = 1 / frameCount;
 
       ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
-
-      if (sec < (1 / frameRate)) {
-        // 1/30s より速い → 1フレームのみ
-        ctx.globalAlpha = 1;
+      for (let i = 0; i < frameCount; i++) {
+        ctx.globalAlpha = alpha;
         ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-      } else {
-        // 1/30s 以上 → 複数フレーム平均合成
-        for (let i = 0; i < frameCount; i++) {
-          ctx.globalAlpha = alpha;
-          ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-          await sleep(1000 / frameRate);
-        }
+        await sleep(1000 / frameRate);
       }
       ctx.globalAlpha = 1;
 
@@ -493,19 +478,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const blob = await toBlobWithFallback();
       if (!blob) throw new Error('blob 生成に失敗');
 
-      const objectURL = URL.createObjectURL(blob);
-      const gallery = ensureGallery();
-      const thumb = document.createElement('img');
-      Object.assign(thumb.style, { width: '80px', border: '2px solid white', cursor: 'pointer' });
-      thumb.alt = '撮影画像サムネイル';
-      thumb.src = objectURL;
-      thumb.addEventListener('click', () => window.open(objectURL, '_blank'));
-      gallery.appendChild(thumb);
-
+      // 共有シート（対応端末なら自動で開く）→ DLフォールバック
       const file = new File([blob], filename, { type: 'image/png' });
+      let objectURL = URL.createObjectURL(blob);
+
       try {
         if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'ココロカメラ', text: '今日の一枚' });
+          await navigator.share({
+            files: [file],
+            title: 'ココロカメラ',
+            text: '今日の一枚',
+          });
         } else {
           const a = document.createElement('a');
           a.href = objectURL;
@@ -523,25 +506,86 @@ document.addEventListener('DOMContentLoaded', () => {
         a.remove();
       }
 
+      // 撮影履歴に追加（情報ボタンで表示）
+      savedPhotos.push({ url: objectURL, filename });
+
+      // 注意: objectURL はメモリ解放のため適切なタイミングで revoke 推奨
+      // このアプリでは履歴表示するため、ページ離脱時にまとめて revoke を推奨
+
     } catch (err) {
       console.error('Capture error:', err);
-      // フォールバック：フィルタ無しで1フレ保存
-      try {
-        const fallbackCanvas = document.createElement('canvas');
-        fallbackCanvas.width = video.videoWidth;
-        fallbackCanvas.height = video.videoHeight;
-        const fctx = fallbackCanvas.getContext('2d');
-        fctx.drawImage(video, 0, 0);
-        const url = fallbackCanvas.toDataURL('image/png');
-        const gallery = ensureGallery();
-        const img = document.createElement('img');
-        img.src = url; img.style.width = '80px'; img.style.border = '2px solid white';
-        gallery.appendChild(img);
-      } catch (e2) {
-        alert('撮影に失敗しました。ページを再読み込みしてもう一度お試しください。');
-      }
+      alert('撮影に失敗しました。ページを再読み込みしてもう一度お試しください。');
     }
   });
+
+  // ====== 情報ボタン：撮影履歴モーダル ======
+  const infoBtn = document.getElementById('camera-info-btn');
+  infoBtn?.addEventListener('click', () => {
+    showGalleryModal();
+  });
+
+  function showGalleryModal() {
+    let modal = document.getElementById('gallery-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'gallery-modal';
+      Object.assign(modal.style, {
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(0,0,0,0.9)',
+        color: '#fff', overflowY: 'auto', zIndex: 9999,
+        padding: '20px', display: 'flex', flexDirection: 'column'
+      });
+      document.body.appendChild(modal);
+    }
+    const gridHtml = savedPhotos.length
+      ? savedPhotos.map(p => `
+          <div style="text-align:center;">
+            <img src="${p.url}" alt="${p.filename}" style="width:100%; border-radius:8px; cursor:pointer;" />
+            <p style="font-size:12px; margin-top:6px; word-break:break-all;">${p.filename}</p>
+            <div style="display:flex; gap:8px; justify-content:center; margin-top:6px;">
+              <a href="${p.url}" download="${p.filename}" style="padding:6px 10px; background:#fff; color:#000; border-radius:6px; text-decoration:none;">保存</a>
+              <button data-share="${p.url}" data-name="${p.filename}" style="padding:6px 10px; background:#2eaadc; color:#fff; border:none; border-radius:6px;">共有</button>
+            </div>
+          </div>
+        `).join('')
+      : `<p style="opacity:.8">まだ写真がありません。撮影してみましょう。</p>`;
+
+    modal.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <h2 style="margin:0; font-size:18px;">撮影した写真</h2>
+        <button id="close-gallery" style="font-size:18px; padding:8px 12px;">閉じる</button>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px;">
+        ${gridHtml}
+      </div>
+    `;
+
+    document.getElementById('close-gallery').onclick = () => modal.remove();
+
+    // 各カードの「共有」ボタン
+    modal.querySelectorAll('button[data-share]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const url = btn.getAttribute('data-share');
+        const name = btn.getAttribute('data-name');
+        try {
+          const r = await fetch(url);
+          const blob = await r.blob();
+          const file = new File([blob], name, { type: 'image/png' });
+          if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file], title: 'ココロカメラ' });
+          } else {
+            const a = document.createElement('a');
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); a.remove();
+          }
+        } catch (e) {
+          const a = document.createElement('a');
+          a.href = url; a.download = name;
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+      });
+    });
+  }
 
   // -------- 画像処理（保存/プレビューパイプライン共通） --------
   function applyFValuePixels(ctx, w, h, f) {
@@ -551,19 +595,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const adj = (v) => {
       let x = v * brightness;
-      x = ((x - 128) * contrast) + 128;
+      x = ((x - 128) * contrast) + 128; // 簡易コントラスト
       return x < 0 ? 0 : x > 255 ? 255 : x;
     };
 
     for (let i = 0; i < data.length; i += 4) {
       let r = adj(data[i]), g = adj(data[i+1]), b = adj(data[i+2]);
-      const avg = (r + g + b) / 3;
+      const avg = (r + g + b) / 3;      // 彩度（平均との差分を増減）
       r = avg + (r - avg) * saturate;
       g = avg + (g - avg) * saturate;
       b = avg + (b - avg) * saturate;
       data[i]   = r < 0 ? 0 : r > 255 ? 255 : r;
       data[i+1] = g < 0 ? 0 : g > 255 ? 255 : g;
       data[i+2] = b < 0 ? 0 : b > 255 ? 255 : b;
+      // αはそのまま
     }
     ctx.putImageData(id, 0, 0);
   }

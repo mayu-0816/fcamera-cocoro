@@ -6,36 +6,41 @@
   <title>ココロカメラ</title>
   <link rel="stylesheet" href="./style.css" />
 
-  <!-- StackBlur.js を先に読み込む -->
+  <!-- StackBlur.js を先に読み込む（プレビュー＆保存のボケ処理で使用） -->
   <script src="https://cdn.jsdelivr.net/gh/flozz/StackBlur/stackblur.min.js"></script>
 
-  <!-- アプリ本体は 1 本だけ（script.js に統一） -->
+  <!-- アプリ本体 -->
   <script src="./script.js" defer></script>
 </head>
 <body>
-
   <div class="app-container">
     <!-- 画面１：スプラッシュ -->
     <div id="screen-initial" class="screen active" aria-hidden="false">
-      <h1>ココロカメラ</h1>
-      <p>あなたの心のシャッターを切る</p>
-      <button id="initial-next-btn" aria-label="アプリを始める">始める</button>
+      <h1 data-i18n="appTitle">ココロカメラ</h1>
+      <p data-i18n="splashTagline">あなたの心のシャッターを切る</p>
+      <button id="initial-next-btn" aria-label="アプリを始める" data-i18n="start">始める</button>
     </div>
 
     <!-- 画面２：使い方 -->
     <div id="screen-introduction" class="screen" aria-hidden="true">
-      <h2>使い方</h2>
-      <p>
-        「ココロカメラ」は、今の心の状態を写真に映し出します。<br />
-        まずは今の心の状態に近い「絞り値(F値)」を選んでください。
+      <h2 data-i18n="howtoTitle">使い方</h2>
+      <p data-i18n="howtoText">
+        「ココロカメラ」は、今の心の状態を写真に映し出します。まずは今の心の状態に近い「絞り値(F値)」を選んでください。
       </p>
-      <button id="intro-next-btn" aria-label="次へ">次へ</button>
+
+      <!-- 任意：ファイル名メタに入れる項目 -->
+      <div class="meta-inputs" style="display:flex; gap:8px; margin:12px 0;">
+        <input id="participant-name" type="text" inputmode="text" placeholder="ニックネーム（任意）" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;" />
+        <input id="room-code" type="text" inputmode="text" placeholder="ルームコード（任意）" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;" />
+      </div>
+
+      <button id="intro-next-btn" aria-label="次へ" data-i18n="next">次へ</button>
     </div>
 
     <!-- 画面３：F値入力 -->
     <div id="screen-fvalue-input" class="screen" aria-hidden="true">
       <div class="f-value-title-container">
-        <p class="f-value-title">現在のF値を入力</p>
+        <p class="f-value-title" data-i18n="fInputTitle">現在のF値を入力</p>
       </div>
       <div class="aperture-control-container">
         <div class="aperture-control" role="slider" aria-valuemin="1.2" aria-valuemax="32.0" aria-valuenow="32.0" aria-label="F値">
@@ -45,27 +50,26 @@
       </div>
       <div class="description-text-container">
         <div class="description-text">
-          <p>F値が小さいほど「開放的」に、</p>
-          <p>大きいほど「集中している」状態を表します。</p>
+          <p data-i18n="fHint1">F値が小さいほど「開放的」に、</p>
+          <p data-i18n="fHint2">大きいほど「集中している」状態を表します。</p>
         </div>
         <input type="hidden" id="aperture" value="32.0" />
-        <button id="f-value-decide-btn" aria-label="F値を決定する">決定</button>
+        <button id="f-value-decide-btn" aria-label="F値を決定する" data-i18n="decide">決定</button>
       </div>
     </div>
 
     <!-- 画面４：BPM計測 -->
     <div id="screen-bpm" class="screen" aria-hidden="true">
-      <h2>BPM計測</h2>
-      <p class="bpm-instruction">
-        カメラに<strong>指先を軽く当てて</strong>ください。<br />
-        赤みの変化から心拍数を推定します（約15秒）。
+      <h2 data-i18n="bpmTitle">BPM計測</h2>
+      <p class="bpm-instruction" data-i18n="bpmPrep">
+        カメラに<strong>指先を軽く当てて</strong>ください。赤みの変化から心拍数を推定します（約15秒）。
       </p>
       <video id="bpm-video" autoplay playsinline muted></video>
       <canvas id="bpm-canvas" style="display:none;"></canvas>
-      <p id="bpm-status">準備ができたら「計測開始」を押してください。</p>
+      <p id="bpm-status" data-i18n="bpmReady">準備ができたら「計測開始」を押してください。</p>
       <div class="bpm-actions">
-        <button id="bpm-start-btn">計測開始</button>
-        <button id="bpm-skip-btn" class="secondary">スキップ</button>
+        <button id="bpm-start-btn" data-i18n="bpmStart">計測開始</button>
+        <button id="bpm-skip-btn" class="secondary" data-i18n="skip">スキップ</button>
       </div>
     </div>
 
@@ -79,14 +83,13 @@
           <span id="bpm-display-camera">BPM: -- / SS: --</span>
         </div>
         <div class="camera-ui-bottom">
-          <button id="camera-switch-btn" class="camera-btn" aria-label="カメラを切り替える">切り替え</button>
-          <button id="camera-shutter-btn" class="camera-btn" aria-label="撮影する">撮影</button>
-          <button id="camera-info-btn" class="camera-btn" aria-label="情報">情報</button>
+          <button id="camera-switch-btn" class="camera-btn" aria-label="カメラを切り替える" data-i18n="switchCam">切り替え</button>
+          <button id="camera-shutter-btn" class="camera-btn" aria-label="撮影する" data-i18n="shoot">撮影</button>
+          <button id="camera-info-btn" class="camera-btn" aria-label="情報" data-i18n="info">情報</button>
         </div>
       </div>
       <div id="camera-gallery" aria-live="polite"></div>
     </div>
   </div>
-
 </body>
 </html>

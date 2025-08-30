@@ -18,25 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------- 辞書（文言を一元管理） --------
   const T = {
     appTitle: "ココロカメラ",
-    splashTagline: "あなたの心のシャッターを切る",
+    splashTagline: "あなたの心とカメラのコラボレーション",
     start: "はじめる",
     next: "次へ",
 
-    howtoTitle: "使い方",
-    howtoText: "「ココロカメラ」は、今の心の状態を写真に映し出します。まずは今の心の状態に近い「絞り値(F値)」を選んでください。",
+    howtoTitle: "名前とルームコードの入力",
+    howtoText: "あなたの名前（ニックネーム）とルームコードを入力してください。（任意）",
 
-    fInputTitle: "現在のF値を入力",
+    fInputTitle: "「ココロカメラ」は、今の心の状態を写真に映し出します。まずは今の心の状態に近い「絞り値(F値)」を選んでください。",
     fHint1: "F値が小さいほど「開放的」に、",
     fHint2: "大きいほど「集中している」状態を表します。",
-    decide: "決定",
+    decide: "次へ",
 
-    bpmTitle: "BPM計測",
-    bpmPrep_html: 'カメラに<strong>指先を軽く当てて</strong>ください。赤みの変化から心拍数を推定します（約15秒）。',
+    bpmTitle: "こころの動きの計測",
+    bpmPrep_html: 'カメラに<strong>指先を軽く当てて</strong>ください。赤みの変化から心拍数を推定します。（約15秒）',
     bpmReady: "準備ができたら「計測開始」を押してください。",
     bpmStart: "計測開始",
     skip: "スキップ",
 
-    switchCam: "切り替え",
+    switchCam: "⇔",
     shoot: "撮影",
     info: "情報",
 
@@ -575,3 +575,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------- 初期表示 --------
   showScreen('initial');
 });
+

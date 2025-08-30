@@ -14,31 +14,53 @@ document.addEventListener('DOMContentLoaded', () => {
     screens[key]?.classList.add('active');
     screens[key]?.setAttribute('aria-hidden','false');
   }
-  
-// 辞書（文章をまとめる）
-const T = {
-  appTitle: "ココロカメラ",
-  splashTagline: "あなたの心のシャッターを切る",
-  start: "はじめる",
-  howtoTitle: "使い方",
-  howtoText: "心の状態に近い「絞り値(F値)」を選んでから撮影してください。",
-  bpmPrep: "カメラに指先を軽く当ててください。明るさが一定になるように調整します。",
-  bpmMeasuring: (remain) => `計測中… 残り ${remain} 秒`,
-  bpmResult: (bpm) => `推定BPM: ${bpm}`,
-  cameraError: "カメラを起動できません。端末の設定からカメラ権限を許可してください。"
-};
 
-    // ★この2つを“今ここ”に追加
+  // -------- 辞書（文言を一元管理） --------
+  const T = {
+    appTitle: "ココロカメラ",
+    splashTagline: "あなたの心のシャッターを切る",
+    start: "はじめる",
+    next: "次へ",
+
+    howtoTitle: "使い方",
+    howtoText: "「ココロカメラ」は、今の心の状態を写真に映し出します。まずは今の心の状態に近い「絞り値(F値)」を選んでください。",
+
+    fInputTitle: "現在のF値を入力",
+    fHint1: "F値が小さいほど「開放的」に、",
+    fHint2: "大きいほど「集中している」状態を表します。",
+    decide: "決定",
+
+    bpmTitle: "BPM計測",
+    bpmPrep_html: 'カメラに<strong>指先を軽く当てて</strong>ください。赤みの変化から心拍数を推定します（約15秒）。',
+    bpmReady: "準備ができたら「計測開始」を押してください。",
+    bpmStart: "計測開始",
+    skip: "スキップ",
+
+    switchCam: "切り替え",
+    shoot: "撮影",
+    info: "情報",
+
+    // 動的テキスト
+    bpmMeasuring: (remain) => `計測中… 残り ${remain} 秒`,
+    bpmResult: (bpm) => `推定BPM: ${bpm}`,
+    cameraError: "カメラを起動できません。端末の設定からカメラ権限を許可してください。"
+  };
+
+  // data-i18n / data-i18n-html に辞書を流し込む
   function applyTexts(dict) {
-    document.querySelectorAll('[data-i18n]').forEach(el => {
+    document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.dataset.i18n;
-      const val = typeof dict[key] === 'function' ? dict[key]() : dict[key];
-      if (val != null) el.textContent = val;
+      const val = dict[key];
+      if (typeof val === "string") el.textContent = val;
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach(el => {
+      const key = el.dataset.i18nHtml;
+      const val = dict[key];
+      if (typeof val === "string") el.innerHTML = val;
     });
   }
-  // 起動時に流し込む
   applyTexts(T);
-  
+
   // -------- カメラ（撮影プレビュー） --------
   const video = document.getElementById('video');
   const rawCanvas = document.getElementById('canvas');
@@ -153,7 +175,7 @@ const T = {
       startPreviewLoop();
     } catch (err) {
       console.error('カメラエラー:', err);
-      alert('カメラを起動できません。権限を許可してください。');
+      alert(T.cameraError);
     }
   }
 
@@ -237,7 +259,7 @@ const T = {
       });
       bpmVideo.srcObject = bpmStream;
       await bpmVideo.play();
-      bpmStatus.textContent = '指をカメラに軽く当ててください。明るさが一定になるように。';
+      bpmStatus.textContent = T.bpmReady;
     } catch (e) {
       console.error(e);
       bpmStatus.textContent = 'カメラ起動に失敗しました。スキップも可能です。';
@@ -310,12 +332,12 @@ const T = {
       const t = (performance.now() - start) / 1000;
       if (t < durationSec) {
         const remain = Math.max(0, durationSec - t);
-        bpmStatus.textContent = `計測中… 残り ${Math.ceil(remain)} 秒`;
+        bpmStatus.textContent = T.bpmMeasuring(Math.ceil(remain));
         bpmLoopId = requestAnimationFrame(loop);
       } else {
         const bpm = estimateBpmFromSeries(vals, durationSec) ?? defaultBpm;
         lastMeasuredBpm = bpm;
-        bpmStatus.textContent = `推定BPM: ${bpm}`;
+        bpmStatus.textContent = T.bpmResult(bpm);
         setTimeout(async () => {
           showScreen('camera');
           const fHud = document.getElementById('fvalue-display-camera');
@@ -375,7 +397,7 @@ const T = {
     console.warn('StackBlurが読み込まれていません（プレビュー/保存時のボケはスキップされます）');
   }
 
-  // === 追加：ファイル名生成ヘルパー（メタ埋め込み） ===
+  // === ファイル名生成ヘルパー（メタ埋め込み） ===
   function fmtShutterLabel(sec) {
     // 例: 0.125s -> "1-8" / 1.3s -> "1.3s"
     return sec >= 1 ? `${sec.toFixed(1)}s` : `1-${Math.round(1/sec)}`;
@@ -439,8 +461,7 @@ const T = {
         StackBlur.canvasRGBA(captureCanvas, 0, 0, captureCanvas.width, captureCanvas.height, blurRadius);
       }
 
-      // ==== ここから置き換え：保存＆共有フロー ====
-      // 任意入力欄が存在すれば拾う（無ければデフォルト）
+      // ==== 保存＆共有フロー ====
       const whoInput  = document.getElementById('participant-name');
       const roomInput = document.getElementById('room-code');
       const who  = (whoInput?.value || 'anon').trim() || 'anon';
@@ -460,7 +481,6 @@ const T = {
         if (captureCanvas.toBlob) {
           captureCanvas.toBlob(b => resolve(b), 'image/png', 1.0);
         } else {
-          // fallback: dataURL -> blob
           const dataURL = captureCanvas.toDataURL('image/png');
           fetch(dataURL).then(r => r.blob()).then(resolve);
         }
@@ -505,7 +525,6 @@ const T = {
         a.remove();
       }
       // ※ URL.revokeObjectURL(objectURL) はページ離脱時にまとめて実施推奨
-      // ==== 置き換えここまで ====
 
     } catch (err) {
       console.error('Capture error:', err);
@@ -556,5 +575,3 @@ const T = {
   // -------- 初期表示 --------
   showScreen('initial');
 });
-
-

@@ -1,7 +1,6 @@
-// ココロカメラ：F値 → BPM → シャッタースピード反映 撮影
-// 保存とプレビューの見た目を一致＋撮影履歴は情報ボタンでモーダル表示
+// ココロカメラ：F値 → BPM → シャッタースピード反映（保存=プレビュー一致）+ 情報モーダル
 document.addEventListener('DOMContentLoaded', () => {
-  // -------- 画面管理 --------
+  // ====== 画面管理 ======
   const screens = {
     initial: document.getElementById('screen-initial'),
     introduction: document.getElementById('screen-introduction'),
@@ -16,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     screens[key]?.setAttribute('aria-hidden','false');
   }
 
-  // -------- 辞書（文言を一元管理） --------
+  // ====== 文言（辞書） ======
   const T = {
     appTitle: "ココロカメラ",
     splashTagline: "あなたの心のシャッターを切る",
@@ -29,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fInputTitle: "「ココロカメラ」は、今の心の状態を写真に映し出します。まずは今の心の状態に近い「絞り値(F値)」を選んでください。",
     fHint1: "F値が小さいほど「開放的」に、",
     fHint2: "大きいほど「集中している」状態を表します。",
-    decide: "次へ",
+    decide: "決定",
 
     bpmTitle: "こころの動きの計測",
     bpmPrep_html: 'カメラに<strong>指先を軽く当てて</strong>ください。赤みの変化から心拍数を推定します。（約15秒）',
@@ -37,11 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
     bpmStart: "計測開始",
     skip: "スキップ",
 
-    switchCam: "⇔",
+    switchCam: "切り替え",
     shoot: "撮影",
     info: "情報",
 
-    // 動的テキスト
     bpmMeasuring: (remain) => `計測中… 残り ${remain} 秒`,
     bpmResult: (bpm) => `推定BPM: ${bpm}`,
     cameraError: "カメラを起動できません。端末の設定からカメラ権限を許可してください。"
@@ -60,19 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   applyTexts(T);
 
-  // ====== 共有の状態 ======
-  let currentStream = null;
-  let isFrontCamera = false;
-  let selectedFValue = 32.0;    // F値
-  let lastMeasuredBpm = 0;      // BPM（計測結果）
-  const defaultBpm = 60;        // フォールバック
-  const savedPhotos = [];       // 撮影履歴（モーダルで表示）
-
   // ====== カメラ（撮影プレビュー） ======
   const video = document.getElementById('video');
   const rawCanvas = document.getElementById('canvas');
 
-  // プレビュー用（実表示）キャンバス
+  // 実表示キャンバス
   const previewCanvas = document.createElement('canvas');
   const previewCtx = previewCanvas.getContext('2d');
   if (screens.camera) {
@@ -82,14 +72,20 @@ document.addEventListener('DOMContentLoaded', () => {
     screens.camera.insertBefore(previewCanvas, screens.camera.firstChild);
   }
 
-  // プレビュー処理用の低解像度キャンバス（負荷軽減）
+  // 軽量処理キャンバス
   const procCanvas = document.createElement('canvas');
   const procCtx = procCanvas.getContext('2d', { willReadFrequently: true });
-  const PREVIEW_MAX_W = 640;   // 端末が重いなら 480 などに下げる
-  const PREVIEW_FPS   = 15;    // 端末が重いなら 12〜10 に下げる
+  const PREVIEW_MAX_W = 640;
+  const PREVIEW_FPS   = 15;
   let lastPreviewTs = 0;
 
-  // -------- F値 → パラメータ／ぼけ半径 --------
+  let currentStream = null;
+  let isFrontCamera = false;
+  let selectedFValue = 32.0;
+  let lastMeasuredBpm = 0;
+  const defaultBpm = 60;
+
+  // ====== F値 → パラメータ／ぼけ半径 ======
   function fParams(f) {
     const brightness = Math.max(0.7, Math.min(1.5, 2.5 / f));
     const saturate   = Math.max(0.5, Math.min(2.0, 2.0 - f / 32));
@@ -97,53 +93,39 @@ document.addEventListener('DOMContentLoaded', () => {
     return { brightness, contrast, saturate };
   }
   function fToBlurRadius(f) {
-    // 保存＆プレビュー共通：開放で強ぼけ、F32でほぼゼロ
     return Math.max(0, Math.round(18 * (1.2 / f)));
   }
 
-  // -------- プレビューループ（保存と同じ処理パス） --------
+  // ====== プレビューループ（保存と同じ処理パス） ======
   let rafId = null;
   function startPreviewLoop() {
     if (rafId) cancelAnimationFrame(rafId);
-
     const render = (ts) => {
       if (video.videoWidth && video.videoHeight) {
-        // 実表示キャンバスは動画サイズに合わせる（等倍で描画）
         if (previewCanvas.width !== video.videoWidth || previewCanvas.height !== video.videoHeight) {
           previewCanvas.width  = video.videoWidth;
           previewCanvas.height = video.videoHeight;
         }
-
-        // 処理レート制限
         const interval = 1000 / PREVIEW_FPS;
-        const shouldProcess = (ts - lastPreviewTs) >= interval;
-
-        if (shouldProcess) {
+        if ((ts - lastPreviewTs) >= interval) {
           lastPreviewTs = ts;
-
-          // 低解像度で処理
           const scale = Math.min(1, PREVIEW_MAX_W / video.videoWidth);
           const w = Math.max(1, Math.round(video.videoWidth  * scale));
           const h = Math.max(1, Math.round(video.videoHeight * scale));
           if (procCanvas.width !== w || procCanvas.height !== h) {
-            procCanvas.width = w;
-            procCanvas.height = h;
+            procCanvas.width = w; procCanvas.height = h;
           }
-
-          // 1) 動画 → 処理キャンバス
+          // 1) ソース
           procCtx.clearRect(0, 0, w, h);
           procCtx.drawImage(video, 0, 0, w, h);
-
-          // 2) F値の明暗/コントラスト/彩度（保存と同じ関数）
+          // 2) F値（明るさ/コントラスト/彩度）
           applyFValuePixels(procCtx, w, h, selectedFValue);
-
-          // 3) F値のぼけ（保存と同じ StackBlur）
+          // 3) F値ぼけ
           const blurRadius = fToBlurRadius(selectedFValue);
           if (blurRadius > 0 && window.StackBlur?.canvasRGBA) {
             StackBlur.canvasRGBA(procCanvas, 0, 0, w, h, blurRadius);
           }
-
-          // 4) 処理済みフレームを実表示キャンバスへ拡大描画
+          // 4) 実表示
           previewCtx.imageSmoothingEnabled = true;
           previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
           previewCtx.drawImage(procCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
@@ -151,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       rafId = requestAnimationFrame(render);
     };
-
     rafId = requestAnimationFrame(render);
   }
   function stopPreviewLoop(){ if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
@@ -163,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const constraints = {
         video: {
           facingMode: facingMode === 'environment' ? { ideal: 'environment' } : 'user',
-          width: { ideal: 1280 }, height: { ideal: 720 } // 安定動作向け
+          width: { ideal: 1280 }, height: { ideal: 720 }
         },
         audio: false
       };
@@ -172,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await video.play();
       currentStream = stream;
       isFrontCamera = (facingMode === 'user');
-      video.style.display = 'none'; // 表示は previewCanvas に統一
+      video.style.display = 'none';
       startPreviewLoop();
     } catch (err) {
       console.error('カメラエラー:', err);
@@ -180,29 +161,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // -------- 画面遷移 --------
+  // ====== 画面遷移 ======
   document.getElementById('initial-next-btn')?.addEventListener('click', () => showScreen('introduction'));
   document.getElementById('intro-next-btn')?.addEventListener('click', () => showScreen('fvalue'));
 
-  // F値決定 → BPM計測へ
-  document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
-    const f = parseFloat(document.getElementById('aperture').value);
-    selectedFValue = f;
-    document.querySelector('.aperture-control')?.setAttribute('aria-valuenow', f.toFixed(1));
-    showScreen('bpm');
-    await startBpmCamera();
-  });
-
-  // カメラ切替（撮影画面）
-  document.getElementById('camera-switch-btn')?.addEventListener('click', async () => {
-    const newMode = isFrontCamera ? 'environment' : 'user';
-    await startCamera(newMode);
-  });
-
-  // -------- F値（ピンチ操作） --------
+  // ====== F値（ピンチ） ======
   const apertureControl = document.querySelector('.aperture-control');
-  const fValueDisplay = document.getElementById('f-value-display');
-  const apertureInput = document.getElementById('aperture');
+  const fValueDisplay   = document.getElementById('f-value-display');
+  const apertureInput   = document.getElementById('aperture');
   const MIN_F = 1.2, MAX_F = 32.0, MIN_SIZE = 100, MAX_SIZE = 250;
 
   const fToSize = f => MIN_SIZE + ((MAX_F - f) / (MAX_F - MIN_F)) * (MAX_SIZE - MIN_SIZE);
@@ -240,10 +206,24 @@ document.addEventListener('DOMContentLoaded', () => {
       lastDistance = current;
     }
   }, { passive: false });
-
   document.body.addEventListener('touchend', () => { lastDistance = null; });
 
-  // -------- BPM 計測 --------
+  // F値決定 → BPM計測へ
+  document.getElementById('f-value-decide-btn')?.addEventListener('click', async () => {
+    const f = parseFloat(apertureInput.value);
+    selectedFValue = f;
+    document.querySelector('.aperture-control')?.setAttribute('aria-valuenow', f.toFixed(1));
+    showScreen('bpm');
+    await startBpmCamera();
+  });
+
+  // カメラ切替
+  document.getElementById('camera-switch-btn')?.addEventListener('click', async () => {
+    const newMode = isFrontCamera ? 'environment' : 'user';
+    await startCamera(newMode);
+  });
+
+  // ====== BPM 計測 ======
   const bpmVideo = document.getElementById('bpm-video');
   const bpmCanvas = document.getElementById('bpm-canvas');
   const bpmCtx = bpmCanvas.getContext('2d');
@@ -266,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
       bpmStatus.textContent = 'カメラ起動に失敗しました。スキップも可能です。';
     }
   }
-
   function stopBpmCamera() {
     if (bpmLoopId) cancelAnimationFrame(bpmLoopId);
     bpmLoopId = null;
@@ -277,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function estimateBpmFromSeries(values, durationSec) {
-    // 移動平均で平滑化
     const k = 4;
     const smooth = values.map((_, i, arr) => {
       let s = 0, c = 0;
@@ -287,17 +265,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return s / c;
     });
-    // ゼロクロス（下降に転じる点）をピークとみなす
     const diffs = smooth.map((v, i) => i ? v - smooth[i - 1] : 0);
     const peaks = [];
     for (let i = 1; i < diffs.length - 1; i++) {
       if (diffs[i - 1] > 0 && diffs[i] <= 0) peaks.push(i);
     }
     if (peaks.length < 2) return null;
-
     const intervals = [];
     for (let i = 1; i < peaks.length; i++) intervals.push(peaks[i] - peaks[i - 1]);
-    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const avgInterval = intervals.reduce((a,b)=>a+b,0) / intervals.length;
     const fps = values.length / durationSec;
     const bpm = Math.round((60 * fps) / avgInterval);
     if (!isFinite(bpm) || bpm <= 20 || bpm >= 220) return null;
@@ -308,24 +284,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!bpmVideo) return;
     const vals = [];
     const start = performance.now();
-
     const loop = () => {
       if (!bpmVideo.videoWidth || !bpmVideo.videoHeight) {
-        bpmLoopId = requestAnimationFrame(loop);
-        return;
+        bpmLoopId = requestAnimationFrame(loop); return;
       }
-      // 軽量サンプリング（中心付近）
       const w = 160, h = 120;
       bpmCanvas.width = w; bpmCanvas.height = h;
-
       bpmCtx.drawImage(
         bpmVideo,
         (bpmVideo.videoWidth - w) / 2, (bpmVideo.videoHeight - h) / 2, w, h,
         0, 0, w, h
       );
       const frame = bpmCtx.getImageData(0, 0, w, h).data;
-
-      // R成分の平均
       let sum = 0;
       for (let i = 0; i < frame.length; i += 4) sum += frame[i];
       vals.push(sum / (frame.length / 4));
@@ -351,7 +321,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     loop();
   }
-
   document.getElementById('bpm-start-btn')?.addEventListener('click', () => {
     bpmStatus.textContent = '計測中…';
     measureBpm(15);
@@ -364,19 +333,16 @@ document.addEventListener('DOMContentLoaded', () => {
     await startCamera('environment');
   });
 
-  // -------- シャッタースピード（BPM→SS） --------
+  // ====== シャッター（BPM→SS + F値焼き込み） ======
   const shutterBtn = document.getElementById('camera-shutter-btn');
   const bpmHud = document.getElementById('bpm-display-camera');
 
-  // 実BPMを露光時間に直結したい場合はここを調整（例: SS = 60/BPM）
+  // 実BPMをシャッタースピードに直に反映：SS(秒) = 60 / BPM（0.1〜2.0にクランプ）
   function exposureTimeSec() {
     const bpm = lastMeasuredBpm || defaultBpm;
-    // 1拍(60/BPM 秒)をベースに、極端な値をクランプ
     return Math.min(2.0, Math.max(0.1, 60 / bpm));
   }
-  function exposureLabel(sec) {
-    return sec >= 1 ? `${sec.toFixed(1)}s` : `1/${Math.round(1 / sec)}s`;
-  }
+  function exposureLabel(sec) { return sec >= 1 ? `${sec.toFixed(1)}s` : `1/${Math.round(1/sec)}s`; }
   function updateCameraHudBpm() {
     const sec = exposureTimeSec();
     bpmHud.textContent = `BPM: ${lastMeasuredBpm || '--'} / SS: ${exposureLabel(sec)}`;
@@ -385,50 +351,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-  // StackBlur ロード確認（デバッグ用）
+  // StackBlur の存在確認
   if (!window.StackBlur || !StackBlur.canvasRGBA) {
     console.warn('StackBlurが読み込まれていません（プレビュー/保存時のボケはスキップされます）');
   }
 
-  // === ファイル名生成ヘルパー（メタ埋め込み） ===
-  function fmtShutterLabel(sec) {
-    return sec >= 1 ? `${sec.toFixed(1)}s` : `1-${Math.round(1/sec)}`;
-  }
-  function safeNum(n) {
-    return String(n).replace('.', '-');
-  }
+  // ====== ファイル名（メタ） ======
+  function fmtShutterLabel(sec) { return sec >= 1 ? `${sec.toFixed(1)}s` : `1-${Math.round(1/sec)}`; }
+  function safeNum(n) { return String(n).replace('.', '-'); }
   function buildFilename({ fValue, bpm, shutterSec, when = new Date(), who = 'anon', room = 'room' }) {
     const pad = (x) => x.toString().padStart(2, '0');
-    const y = when.getFullYear();
-    const m = pad(when.getMonth()+1);
-    const d = pad(when.getDate());
-    const hh = pad(when.getHours());
-    const mm = pad(when.getMinutes());
-    const ss = pad(when.getSeconds());
-
+    const y = when.getFullYear(), m = pad(when.getMonth()+1), d = pad(when.getDate());
+    const hh = pad(when.getHours()), mm = pad(when.getMinutes()), ss = pad(when.getSeconds());
     const fStr = safeNum(Number(fValue).toFixed(1));
     const bpmStr = bpm ?? '--';
     const ssStr = fmtShutterLabel(shutterSec);
-
     return `cocoro_${y}-${m}-${d}_${hh}-${mm}-${ss}_${room}_${who}_F${fStr}_BPM${bpmStr}_SS${ssStr}.png`;
   }
 
-  // ====== 撮影処理 ======
+  // ====== 撮影履歴（モーダルに表示） ======
+  const savedPhotos = []; // { url, filename }
+
+  // ====== シャッター処理 ======
   shutterBtn?.addEventListener('click', async () => {
     try {
       if (!video.videoWidth) return;
 
-      // 高解像度で重い端末向けに、最大幅でスケール制限
       const maxW = 1600;
       const scale = Math.min(1, maxW / video.videoWidth);
 
       const captureCanvas = rawCanvas || document.createElement('canvas');
       captureCanvas.width  = Math.round(video.videoWidth  * scale);
       captureCanvas.height = Math.round(video.videoHeight * scale);
-
       const ctx = captureCanvas.getContext('2d', { willReadFrequently: true });
 
-      // ① 露光シミュレーション（BPM＝シャッタースピード）
+      // ① 露光シミュレーション（BPM＝SS）
       const sec = exposureTimeSec();
       const frameRate = 30;
       const frameCount = Math.max(1, Math.round(sec * frameRate));
@@ -442,31 +399,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       ctx.globalAlpha = 1;
 
-      // ② F値の明暗/コントラスト/彩度をピクセル処理で反映
+      // ② F値の明暗/コントラスト/彩度
       applyFValuePixels(ctx, captureCanvas.width, captureCanvas.height, selectedFValue);
 
-      // ③ F値の被写界深度っぽいボケを StackBlur で反映
+      // ③ F値ぼけ
       const blurRadius = fToBlurRadius(selectedFValue);
       if (blurRadius > 0 && window.StackBlur?.canvasRGBA) {
         StackBlur.canvasRGBA(captureCanvas, 0, 0, captureCanvas.width, captureCanvas.height, blurRadius);
       }
 
-      // ==== 保存＆共有フロー ====
-      const whoInput  = document.getElementById('participant-name');
-      const roomInput = document.getElementById('room-code');
-      const who  = (whoInput?.value || 'anon').trim() || 'anon';
-      const room = (roomInput?.value || 'room').trim() || 'room';
-
-      const shutterSec = sec;
+      // 共有・保存用データ準備
+      const who  = (document.getElementById('participant-name')?.value || 'anon').trim() || 'anon';
+      const room = (document.getElementById('room-code')?.value || 'room').trim() || 'room';
       const filename = buildFilename({
         fValue: selectedFValue,
         bpm: (lastMeasuredBpm || null),
-        shutterSec,
-        who,
-        room,
+        shutterSec: sec,
+        who, room,
       });
 
-      const toBlobWithFallback = () => new Promise((resolve) => {
+      const blob = await new Promise((resolve) => {
         if (captureCanvas.toBlob) {
           captureCanvas.toBlob(b => resolve(b), 'image/png', 1.0);
         } else {
@@ -474,43 +426,28 @@ document.addEventListener('DOMContentLoaded', () => {
           fetch(dataURL).then(r => r.blob()).then(resolve);
         }
       });
-
-      const blob = await toBlobWithFallback();
       if (!blob) throw new Error('blob 生成に失敗');
 
-      // 共有シート（対応端末なら自動で開く）→ DLフォールバック
-      const file = new File([blob], filename, { type: 'image/png' });
-      let objectURL = URL.createObjectURL(blob);
+      const objectURL = URL.createObjectURL(blob);
 
-      try {
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'ココロカメラ',
-            text: '今日の一枚',
-          });
-        } else {
-          const a = document.createElement('a');
-          a.href = objectURL;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        }
-      } catch (e) {
-        const a = document.createElement('a');
-        a.href = objectURL;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }
-
-      // 撮影履歴に追加（情報ボタンで表示）
+      // 撮影履歴へ保存（下部サムネは作らない）
       savedPhotos.push({ url: objectURL, filename });
 
-      // 注意: objectURL はメモリ解放のため適切なタイミングで revoke 推奨
-      // このアプリでは履歴表示するため、ページ離脱時にまとめて revoke を推奨
+      // 共有シート → だめならDL
+      const file = new File([blob], filename, { type: 'image/png' });
+      try {
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'ココロカメラ', text: '今日の一枚' });
+        } else {
+          const a = document.createElement('a');
+          a.href = objectURL; a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+      } catch {
+        const a = document.createElement('a');
+        a.href = objectURL; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+      }
 
     } catch (err) {
       console.error('Capture error:', err);
@@ -518,101 +455,87 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ====== 情報ボタン：撮影履歴モーダル ======
-  const infoBtn = document.getElementById('camera-info-btn');
-  infoBtn?.addEventListener('click', () => {
-    showGalleryModal();
-  });
-
-  function showGalleryModal() {
-    let modal = document.getElementById('gallery-modal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'gallery-modal';
-      Object.assign(modal.style, {
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'rgba(0,0,0,0.9)',
-        color: '#fff', overflowY: 'auto', zIndex: 9999,
-        padding: '20px', display: 'flex', flexDirection: 'column'
-      });
-      document.body.appendChild(modal);
-    }
-    const gridHtml = savedPhotos.length
-      ? savedPhotos.map(p => `
-          <div style="text-align:center;">
-            <img src="${p.url}" alt="${p.filename}" style="width:100%; border-radius:8px; cursor:pointer;" />
-            <p style="font-size:12px; margin-top:6px; word-break:break-all;">${p.filename}</p>
-            <div style="display:flex; gap:8px; justify-content:center; margin-top:6px;">
-              <a href="${p.url}" download="${p.filename}" style="padding:6px 10px; background:#fff; color:#000; border-radius:6px; text-decoration:none;">保存</a>
-              <button data-share="${p.url}" data-name="${p.filename}" style="padding:6px 10px; background:#2eaadc; color:#fff; border:none; border-radius:6px;">共有</button>
-            </div>
-          </div>
-        `).join('')
-      : `<p style="opacity:.8">まだ写真がありません。撮影してみましょう。</p>`;
-
-    modal.innerHTML = `
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-        <h2 style="margin:0; font-size:18px;">撮影した写真</h2>
-        <button id="close-gallery" style="font-size:18px; padding:8px 12px;">閉じる</button>
-      </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px;">
-        ${gridHtml}
-      </div>
-    `;
-
-    document.getElementById('close-gallery').onclick = () => modal.remove();
-
-    // 各カードの「共有」ボタン
-    modal.querySelectorAll('button[data-share]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const url = btn.getAttribute('data-share');
-        const name = btn.getAttribute('data-name');
-        try {
-          const r = await fetch(url);
-          const blob = await r.blob();
-          const file = new File([blob], name, { type: 'image/png' });
-          if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ files: [file], title: 'ココロカメラ' });
-          } else {
-            const a = document.createElement('a');
-            a.href = url; a.download = name;
-            document.body.appendChild(a); a.click(); a.remove();
-          }
-        } catch (e) {
-          const a = document.createElement('a');
-          a.href = url; a.download = name;
-          document.body.appendChild(a); a.click(); a.remove();
-        }
-      });
-    });
-  }
-
-  // -------- 画像処理（保存/プレビューパイプライン共通） --------
+  // ====== 画像処理（保存/プレビュー共通） ======
   function applyFValuePixels(ctx, w, h, f) {
     const { brightness, contrast, saturate } = fParams(f);
     const id = ctx.getImageData(0, 0, w, h);
     const data = id.data;
-
     const adj = (v) => {
       let x = v * brightness;
-      x = ((x - 128) * contrast) + 128; // 簡易コントラスト
+      x = ((x - 128) * contrast) + 128;
       return x < 0 ? 0 : x > 255 ? 255 : x;
     };
-
     for (let i = 0; i < data.length; i += 4) {
       let r = adj(data[i]), g = adj(data[i+1]), b = adj(data[i+2]);
-      const avg = (r + g + b) / 3;      // 彩度（平均との差分を増減）
+      const avg = (r + g + b) / 3;
       r = avg + (r - avg) * saturate;
       g = avg + (g - avg) * saturate;
       b = avg + (b - avg) * saturate;
       data[i]   = r < 0 ? 0 : r > 255 ? 255 : r;
       data[i+1] = g < 0 ? 0 : g > 255 ? 255 : g;
       data[i+2] = b < 0 ? 0 : b > 255 ? 255 : b;
-      // αはそのまま
     }
     ctx.putImageData(id, 0, 0);
   }
 
-  // -------- 初期表示 --------
+  // ====== 情報ボタン：撮影履歴モーダル ======
+  const infoBtn = document.getElementById('camera-info-btn');
+  infoBtn?.addEventListener('click', showGalleryModal);
+
+  function showGalleryModal() {
+    const modal = document.getElementById('gallery-modal');
+    if (!modal) return;
+    const grid = modal.querySelector('#gallery-grid');
+    const closeBtn = modal.querySelector('#gallery-close-btn');
+    // グリッド描画
+    grid.innerHTML = savedPhotos.length
+      ? savedPhotos.map(p => `
+          <div class="cc-grid-item">
+            <img src="${p.url}" alt="${p.filename}" class="cc-grid-img" />
+            <p class="cc-grid-name">${p.filename}</p>
+            <div class="cc-grid-actions">
+              <a href="${p.url}" download="${p.filename}" class="cc-btn cc-btn--light">保存</a>
+              <button data-share="${p.url}" data-name="${p.filename}" class="cc-btn">共有</button>
+            </div>
+          </div>
+        `).join('')
+      : `<p class="cc-empty">まだ写真がありません。撮影してみましょう。</p>`;
+
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+
+    // 閉じる
+    const backdrop = modal.querySelector('.cc-modal-backdrop');
+    const close = () => {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    };
+    closeBtn.onclick = close;
+    backdrop.onclick = close;
+
+    // 共有（イベント委任）
+    grid.onclick = async (e) => {
+      const btn = e.target.closest('button[data-share]');
+      if (!btn) return;
+      const url = btn.getAttribute('data-share');
+      const name = btn.getAttribute('data-name') || 'photo.png';
+      try {
+        // URL から blob を得る（ObjectURLでもOK）
+        const blob = await fetch(url).then(r => r.blob());
+        const file = new File([blob], name, { type: 'image/png' });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'ココロカメラ', text: name });
+        } else {
+          const a = document.createElement('a');
+          a.href = url; a.download = name;
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+  }
+
+  // ====== 初期表示 ======
   showScreen('initial');
 });

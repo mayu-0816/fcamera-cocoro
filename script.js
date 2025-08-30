@@ -14,6 +14,19 @@ document.addEventListener('DOMContentLoaded', () => {
     screens[key]?.classList.add('active');
     screens[key]?.setAttribute('aria-hidden','false');
   }
+  
+// 辞書（文章をまとめる）
+const T = {
+  appTitle: "ココロカメラ",
+  splashTagline: "あなたの心のシャッターを切る",
+  start: "はじめる",
+  howtoTitle: "使い方",
+  howtoText: "心の状態に近い「絞り値(F値)」を選んでから撮影してください。",
+  bpmPrep: "カメラに指先を軽く当ててください。明るさが一定になるように調整します。",
+  bpmMeasuring: (remain) => `計測中… 残り ${remain} 秒`,
+  bpmResult: (bpm) => `推定BPM: ${bpm}`,
+  cameraError: "カメラを起動できません。端末の設定からカメラ権限を許可してください。"
+};
 
   // -------- カメラ（撮影プレビュー） --------
   const video = document.getElementById('video');
@@ -532,3 +545,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------- 初期表示 --------
   showScreen('initial');
 });
+

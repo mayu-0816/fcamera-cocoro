@@ -351,6 +351,33 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('StackBlurが読み込まれていません（プレビュー/保存時のボケはスキップされます）');
   }
 
+  // === 追加：ファイル名生成ヘルパー（メタ埋め込み） ===
+  function fmtShutterLabel(sec) {
+    // 例: 0.125s -> "1-8" / 1.3s -> "1.3s"
+    return sec >= 1 ? `${sec.toFixed(1)}s` : `1-${Math.round(1/sec)}`;
+  }
+  function safeNum(n) {
+    // 小数点をハイフンに（F1.8 -> F1-8）
+    return String(n).replace('.', '-');
+  }
+  function buildFilename({ fValue, bpm, shutterSec, when = new Date(), who = 'anon', room = 'room' }) {
+    // 例: cocoro_2025-08-30_14-15-32_room-ws01_anon_F1-8_BPM72_SS1-8.png
+    const pad = (x) => x.toString().padStart(2, '0');
+    const y = when.getFullYear();
+    const m = pad(when.getMonth()+1);
+    const d = pad(when.getDate());
+    const hh = pad(when.getHours());
+    const mm = pad(when.getMinutes());
+    const ss = pad(when.getSeconds());
+
+    const fStr = safeNum(Number(fValue).toFixed(1));
+    const bpmStr = bpm ?? '--';
+    const ssStr = fmtShutterLabel(shutterSec);
+
+    return `cocoro_${y}-${m}-${d}_${hh}-${mm}-${ss}_${room}_${who}_F${fStr}_BPM${bpmStr}_SS${ssStr}.png`;
+  }
+
+  // シャッター処理
   shutterBtn?.addEventListener('click', async () => {
     try {
       if (!video.videoWidth) return;
@@ -379,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       ctx.globalAlpha = 1;
 
-      // ② F値の明暗/コントラスト/彩度をピクセル処理で反映（確実に保存に乗る）
+      // ② F値の明暗/コントラスト/彩度をピクセル処理で反映
       applyFValuePixels(ctx, captureCanvas.width, captureCanvas.height, selectedFValue);
 
       // ③ F値の被写界深度っぽいボケを StackBlur で反映
@@ -388,23 +415,73 @@ document.addEventListener('DOMContentLoaded', () => {
         StackBlur.canvasRGBA(captureCanvas, 0, 0, captureCanvas.width, captureCanvas.height, blurRadius);
       }
 
-      // ④ 保存＆ギャラリー
-      const dataURL = captureCanvas.toDataURL('image/png');
+      // ==== ここから置き換え：保存＆共有フロー ====
+      // 任意入力欄が存在すれば拾う（無ければデフォルト）
+      const whoInput  = document.getElementById('participant-name');
+      const roomInput = document.getElementById('room-code');
+      const who  = (whoInput?.value || 'anon').trim() || 'anon';
+      const room = (roomInput?.value || 'room').trim() || 'room';
 
+      const shutterSec = sec; // 露光時間（上で算出）
+      const filename = buildFilename({
+        fValue: selectedFValue,
+        bpm: (lastMeasuredBpm || null),
+        shutterSec,
+        who,
+        room,
+      });
+
+      // Canvas → Blob（古い環境向けフォールバック付き）
+      const toBlobWithFallback = () => new Promise((resolve) => {
+        if (captureCanvas.toBlob) {
+          captureCanvas.toBlob(b => resolve(b), 'image/png', 1.0);
+        } else {
+          // fallback: dataURL -> blob
+          const dataURL = captureCanvas.toDataURL('image/png');
+          fetch(dataURL).then(r => r.blob()).then(resolve);
+        }
+      });
+
+      const blob = await toBlobWithFallback();
+      if (!blob) throw new Error('blob 生成に失敗');
+
+      // ギャラリーのサムネ（先に出す）
+      const objectURL = URL.createObjectURL(blob);
       const gallery = ensureGallery();
       const thumb = document.createElement('img');
-      thumb.src = dataURL;
-      thumb.style.width = '80px';
-      thumb.style.border = '2px solid white';
-      thumb.style.cursor = 'pointer';
+      Object.assign(thumb.style, { width: '80px', border: '2px solid white', cursor: 'pointer' });
       thumb.alt = '撮影画像サムネイル';
-      thumb.addEventListener('click', () => window.open(dataURL, '_blank'));
+      thumb.src = objectURL;
+      thumb.addEventListener('click', () => window.open(objectURL, '_blank'));
       gallery.appendChild(thumb);
 
-      const a = document.createElement('a');
-      a.href = dataURL;
-      a.download = 'cocoro_photo.png';
-      a.click();
+      // 共有シート（対応端末なら自動で開く）→ DLフォールバック
+      const file = new File([blob], filename, { type: 'image/png' });
+      try {
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'ココロカメラ',
+            text: '今日の一枚',
+          });
+        } else {
+          const a = document.createElement('a');
+          a.href = objectURL;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        }
+      } catch (e) {
+        const a = document.createElement('a');
+        a.href = objectURL;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      // ※ URL.revokeObjectURL(objectURL) はページ離脱時にまとめて実施推奨
+      // ==== 置き換えここまで ====
 
     } catch (err) {
       console.error('Capture error:', err);

@@ -1,221 +1,113 @@
-/* ベース */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: #f0f0f0;
-}
-* { box-sizing: border-box; }
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+  <title>ココロカメラ</title>
+  <link rel="stylesheet" href="./style.css" />
 
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  touch-action: none;          /* 全面アプリ挙動 */
-  overscroll-behavior: none;
-}
+  <!-- StackBlur.js を先に読み込む（プレビュー＆保存のボケ処理で使用） -->
+  <script src="https://cdn.jsdelivr.net/gh/flozz/StackBlur/stackblur.min.js"></script>
 
-/* 端末サイズに合わせて自然にスケール */
-.app-container {
-  width: 100%;
-  height: 100%;
-  max-width: 420px;            /* 少し余裕を持たせる */
-  aspect-ratio: 375 / 812;     /* iPhone系の比率基準でスケーリング */
-  background: #fff;
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
+  <!-- アプリ本体 -->
+  <script src="./script.js" defer></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 画面１：スプラッシュ -->
+    <div id="screen-initial" class="screen active" aria-hidden="false">
+      <h1 data-i18n="appTitle">ココロカメラ</h1>
+      <p data-i18n="splashTagline">あなたの心のシャッターを切る</p>
+      <button id="initial-next-btn" aria-label="アプリを始める" data-i18n="start">はじめる</button>
+    </div>
 
-.screen {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  justify-content: center; align-items: center;
-  text-align: center; padding: 20px;
-  opacity: 0; pointer-events: none;
-  transition: opacity .4s ease;
-}
-.screen.active { opacity: 1; pointer-events: auto; }
+    <!-- 画面２：使い方 -->
+    <div id="screen-introduction" class="screen" aria-hidden="true">
+      <h2 data-i18n="howtoTitle">使い方</h2>
+      <p data-i18n="howtoText">
+        「ココロカメラ」は、今の心の状態を写真に映し出します。まずは今の心の状態に近い「絞り値(F値)」を選んでください。
+      </p>
 
-h1 { font-size: 2.3rem; font-weight: 800; color: #333; margin: 0 0 10px; }
-h2 { font-size: 1.7rem; font-weight: 700; color: #444; margin: 0 0 10px; }
-p  { font-size: 1rem; color: #666; line-height: 1.6; margin: 0 0 8px; }
+      <!-- 任意：ファイル名メタに入れる項目 -->
+      <div class="meta-inputs" style="display:flex; gap:8px; margin:12px 0;">
+        <input id="participant-name" type="text" inputmode="text" placeholder="ニックネーム（任意）"
+               style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;" />
+        <input id="room-code" type="text" inputmode="text" placeholder="ルームコード（任意）"
+               style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;" />
+      </div>
 
-button {
-  padding: 14px 28px; font-size: 16px; font-weight: 700;
-  border-radius: 999px; cursor: pointer;
-  background: #111; color: #fff; border: none;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  transition: transform .15s, box-shadow .15s, opacity .15s;
-}
-button:hover { transform: translateY(-1px); box-shadow: 0 6px 15px rgba(0,0,0,0.28); }
-button:active { transform: translateY(0); }
-button.secondary { background: #ececec; color: #222; }
-button:focus-visible { outline: 3px solid #5aa9ff; outline-offset: 2px; }
+      <button id="intro-next-btn" aria-label="次へ" data-i18n="next">次へ</button>
+    </div>
 
-/* F値入力 */
-#screen-fvalue-input { display: flex; flex-direction: column; }
-.f-value-title-container { width: 100%; padding-top: 8px; }
-.aperture-control-container { display: flex; justify-content: center; align-items: center; flex: 1; width: 100%; }
-.description-text-container { display: flex; flex-direction: column; align-items: center; padding-bottom: 12px; gap: 8px; }
-.f-value-title { font-size: 1.1rem; font-weight: 600; color: #555; }
+    <!-- 画面３：F値入力 -->
+    <div id="screen-fvalue-input" class="screen" aria-hidden="true">
+      <div class="f-value-title-container">
+        <p class="f-value-title" data-i18n="fInputTitle">現在のF値を入力</p>
+      </div>
+      <div class="aperture-control-container">
+        <div class="aperture-control" role="slider"
+             aria-valuemin="1.2" aria-valuemax="32.0" aria-valuenow="32.0" aria-label="F値">
+          <div class="aperture-ring"></div>
+          <div class="aperture-value" id="f-value-display">32.0</div>
+        </div>
+      </div>
+      <div class="description-text-container">
+        <div class="description-text">
+          <p data-i18n="fHint1">F値が小さいほど「開放的」に、</p>
+          <p data-i18n="fHint2">大きいほど「集中している」状態を表します。</p>
+        </div>
+        <input type="hidden" id="aperture" value="32.0" />
+        <button id="f-value-decide-btn" aria-label="F値を決定する" data-i18n="decide">決定</button>
+      </div>
+    </div>
 
-.aperture-control { position: relative; width: 200px; height: 200px; transition: all .18s ease; }
-.aperture-ring {
-  width: 100%; height: 100%; border-radius: 50%; border: 4px solid #ccc; background: #f0f0f0;
-  box-shadow:
-    inset 0 0 10px rgba(0,0,0,0.1),
-    0 5px 15px rgba(0,0,0,0.18),
-    0 0 0 4px rgba(255,255,255,0.5),
-    0 0 0 8px rgba(0,0,0,0.05);
-}
-.aperture-value {
-  position: absolute; inset: 0; display: grid; place-items: center;
-  font-size: 2.3rem; font-weight: 800; color: #333;
-}
+    <!-- 画面４：BPM計測 -->
+    <div id="screen-bpm" class="screen" aria-hidden="true">
+      <h2 data-i18n="bpmTitle">BPM計測</h2>
+      <!-- マークアップ（strong）を保持したいので data-i18n-html を使う -->
+      <p class="bpm-instruction" data-i18n-html="bpmPrep_html">
+        カメラに<strong>指先を軽く当てて</strong>ください。赤みの変化から心拍数を推定します（約15秒）。
+      </p>
+      <video id="bpm-video" autoplay playsinline muted></video>
+      <canvas id="bpm-canvas" style="display:none;"></canvas>
+      <p id="bpm-status" data-i18n="bpmReady">準備ができたら「計測開始」を押してください。</p>
+      <div class="bpm-actions">
+        <button id="bpm-start-btn" data-i18n="bpmStart">計測開始</button>
+        <button id="bpm-skip-btn" class="secondary" data-i18n="skip">スキップ</button>
+      </div>
+    </div>
 
-/* BPM計測 */
-#screen-bpm { background: #111; color: #eee; }
-#screen-bpm h2 { color: #fff; }
-.bpm-instruction { color: #ddd; }
-#bpm-video {
-  width: 80%; max-width: 320px; aspect-ratio: 4/3; background: #000;
-  border-radius: 12px; margin: 12px 0;
-}
-#bpm-status { color: #ccc; margin: 6px 0 12px; }
-.bpm-actions { display: flex; gap: 12px; }
+    <!-- 画面５：カメラ -->
+    <div id="screen-camera" class="screen" aria-hidden="true">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas"></canvas>
+      <div class="camera-ui">
+        <div class="camera-ui-top">
+          <span id="fvalue-display-camera">F: 32.0</span>
+          <span id="bpm-display-camera">BPM: -- / SS: --</span>
+        </div>
+        <div class="camera-ui-bottom">
+          <button id="camera-switch-btn" class="camera-btn" aria-label="カメラを切り替える" data-i18n="switchCam">切り替え</button>
+          <button id="camera-shutter-btn" class="camera-btn" aria-label="撮影する" data-i18n="shoot">撮影</button>
+          <button id="camera-info-btn" class="camera-btn" aria-label="情報" data-i18n="info">情報</button>
+        </div>
+      </div>
+      <div id="camera-gallery" aria-live="polite"></div>
+    </div>
+  </div>
 
-/* カメラ画面 */
-#screen-camera { background: #000; }
-#video {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; z-index: 1;
-}
-#canvas { display: none; }
-
-.camera-ui {
-  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 16px; z-index: 2;
-}
-.camera-ui-top {
-  width: 100%; display: flex; justify-content: space-between; padding: 10px 12px;
-  color: #fff; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,.5);
-  background: linear-gradient(to bottom, rgba(0,0,0,.45), transparent);
-  border-radius: 10px;
-}
-.camera-ui-bottom { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 16px 10px; }
-#camera-shutter-btn {
-  padding: 18px 36px; border: 3px solid #fff; background: rgba(255,255,255,.3); color: #fff;
-  font-size: 1.1rem; font-weight: 800; backdrop-filter: blur(5px);
-}
-
-#camera-gallery {
-  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 10px; max-width: 92%; overflow-x: auto; padding: 5px; z-index: 10;
-}
-#camera-gallery img { border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,.25); transition: transform .15s; }
-#camera-gallery img:hover { transform: scale(1.05); }
-
-@media (prefers-color-scheme: dark) {
-  body { background: #0f0f12; }
-}
-
-/* Modal base */
-.cc-modal.hidden { display:none; }
-.cc-modal { position:fixed; inset:0; z-index:9999; }
-.cc-modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.5); }
-.cc-modal-panel {
-  position:relative; margin:5vh auto; max-width:960px; height:90vh;
-  background:#111; color:#fff; border-radius:16px; overflow:hidden; width:92vw;
-  display:flex; flex-direction:column;
-}
-.cc-modal-header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:12px 16px; border-bottom:1px solid rgba(255,255,255,.12);
-}
-#gallery-close-btn { background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer; }
-.cc-grid {
-  padding:12px; overflow:auto; flex:1;
-  display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:10px;
-}
-.cc-grid-item { position:relative; border-radius:10px; overflow:hidden; background:#000; }
-.cc-grid-item img { width:100%; height:100%; object-fit:cover; display:block; }
-.cc-grid-meta {
-  position:absolute; left:0; right:0; bottom:0;
-  padding:4px 6px; font-size:12px;
-  background:linear-gradient(transparent, rgba(0,0,0,.7)); color:#fff;
-}
-.cc-grid-actions {
-  position:absolute; top:6px; right:6px; display:flex; gap:6px;
-}
-.cc-grid-actions button {
-  border:none; border-radius:8px; padding:6px 8px; cursor:pointer; font-size:12px;
-  background:rgba(255,255,255,.15); color:#fff;
-}
-
-.hidden {
-  display: none !important;
-}
-
-.cc-modal {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.9);
-  color: #fff;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-}
-
-.cc-modal-backdrop {
-  position: absolute;
-  top:0; left:0; right:0; bottom:0;
-  background: rgba(0,0,0,0.7);
-}
-
-.cc-modal-panel {
-  position: relative;
-  background: #222;
-  margin: auto;
-  padding: 16px;
-  border-radius: 8px;
-  max-width: 90%;
-  max-height: 90%;
-  overflow-y: auto;
-}
-
-.cc-grid-item {
-  aspect-ratio: 1 / 1;        /* 正方形の枠 */
-  overflow: hidden;           /* はみ出した部分を隠す */
-  border-radius: 6px;
-  background: #000;           /* 背景が透けないように */
-}
-
-.cc-grid-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;          /* はみ出しをトリミングして枠にフィット */
-  border-radius: 6px;
-}
-
-
-.cc-btn {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-.cc-btn--light {
-  background: #fff;
-  color: #000;
-}
-
-.cc-btn {
-  background: #2eaadc;
-  color: #fff;
-}
-
+  <!-- ▼ ギャラリー・モーダル（必ず body の中に置く） -->
+  <div id="gallery-modal" class="cc-modal hidden" aria-hidden="true"
+       role="dialog" aria-label="撮影ギャラリー">
+    <div class="cc-modal-backdrop" data-close="1"></div>
+    <div class="cc-modal-panel" role="document">
+      <div class="cc-modal-header">
+        <h3>ギャラリー</h3>
+        <button id="gallery-close-btn" aria-label="閉じる">×</button>
+      </div>
+      <div id="gallery-grid" class="cc-grid" aria-live="polite"></div>
+    </div>
+  </div>
+  <!-- ▲ ギャラリー・モーダル -->
+</body>
+</html>

@@ -18,7 +18,7 @@
     <div id="screen-initial" class="screen active" aria-hidden="false">
       <h1 data-i18n="appTitle">ココロカメラ</h1>
       <p data-i18n="splashTagline">あなたの心のシャッターを切る</p>
-      <button id="initial-next-btn" aria-label="アプリを始める" data-i18n="start">始める</button>
+      <button id="initial-next-btn" aria-label="アプリを始める" data-i18n="start">はじめる</button>
     </div>
 
     <!-- 画面２：使い方 -->
@@ -61,7 +61,8 @@
     <!-- 画面４：BPM計測 -->
     <div id="screen-bpm" class="screen" aria-hidden="true">
       <h2 data-i18n="bpmTitle">BPM計測</h2>
-      <p class="bpm-instruction" data-i18n="bpmPrep">
+      <!-- マークアップ（strong）を保持したいので data-i18n-html を使う -->
+      <p class="bpm-instruction" data-i18n-html="bpmPrep_html">
         カメラに<strong>指先を軽く当てて</strong>ください。赤みの変化から心拍数を推定します（約15秒）。
       </p>
       <video id="bpm-video" autoplay playsinline muted></video>

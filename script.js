@@ -1,4 +1,4 @@
-// ココロカメラ：F値 → BPM → シャッタースピード反映 撮影（保存とプレビューを一致）
+// ココロカメラ：F値 → BPM → シャッタースピード反映 撮影（保存とプレビューを一致・BPM=1/SS）
 document.addEventListener('DOMContentLoaded', () => {
   // -------- 画面管理 --------
   const screens = {
@@ -78,8 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // プレビュー処理用の低解像度キャンバス（負荷軽減）
   const procCanvas = document.createElement('canvas');
   const procCtx = procCanvas.getContext('2d', { willReadFrequently: true });
-  const PREVIEW_MAX_W = 640;   // 端末が重いなら 480 などに下げる
-  const PREVIEW_FPS   = 15;    // 端末が重いなら 12〜10 に下げる
+  const PREVIEW_MAX_W = 640;
+  const PREVIEW_FPS   = 15;
   let lastPreviewTs = 0;
 
   let currentStream = null;
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const render = (ts) => {
       if (video.videoWidth && video.videoHeight) {
-        // 実表示キャンバスは動画サイズに合わせる（等倍で描画）
+        // 実表示キャンバスは動画サイズに合わせる
         if (previewCanvas.width !== video.videoWidth || previewCanvas.height !== video.videoHeight) {
           previewCanvas.width  = video.videoWidth;
           previewCanvas.height = video.videoHeight;
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const constraints = {
         video: {
           facingMode: facingMode === 'environment' ? { ideal: 'environment' } : 'user',
-          width: { ideal: 1280 }, height: { ideal: 720 } // 安定動作向け
+          width: { ideal: 1280 }, height: { ideal: 720 }
         },
         audio: false
       };
@@ -367,12 +367,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const shutterBtn = document.getElementById('camera-shutter-btn');
   const bpmHud = document.getElementById('bpm-display-camera');
 
+  // ★ここをBPM=分母に変更（1/BPM 秒, 下限1/240s, 上限2s）
   function exposureTimeSec() {
     const bpm = lastMeasuredBpm || defaultBpm;
-    return Math.min(2.0, Math.max(0.1, 60 / bpm)); // 0.1s〜2.0s に制限
+    return Math.min(2.0, Math.max(1 / 240, 1 / bpm));
   }
+
   function exposureLabel(sec) {
-    return sec >= 1 ? `${sec.toFixed(1)}s` : `1/${Math.round(1 / sec)}s`;
+    if (sec >= 1) return `${sec.toFixed(1)}s`;
+    const denom = Math.round(1 / sec);
+    return `1/${denom}s`;
   }
   function updateCameraHudBpm() {
     const sec = exposureTimeSec();
@@ -399,15 +403,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // === ファイル名生成ヘルパー（メタ埋め込み） ===
   function fmtShutterLabel(sec) {
-    // 例: 0.125s -> "1-8" / 1.3s -> "1.3s"
     return sec >= 1 ? `${sec.toFixed(1)}s` : `1-${Math.round(1/sec)}`;
   }
-  function safeNum(n) {
-    // 小数点をハイフンに（F1.8 -> F1-8）
-    return String(n).replace('.', '-');
-  }
+  function safeNum(n) { return String(n).replace('.', '-'); }
   function buildFilename({ fValue, bpm, shutterSec, when = new Date(), who = 'anon', room = 'room' }) {
-    // 例: cocoro_2025-08-30_14-15-32_room-ws01_anon_F1-8_BPM72_SS1-8.png
     const pad = (x) => x.toString().padStart(2, '0');
     const y = when.getFullYear();
     const m = pad(when.getMonth()+1);
@@ -415,11 +414,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const hh = pad(when.getHours());
     const mm = pad(when.getMinutes());
     const ss = pad(when.getSeconds());
-
     const fStr = safeNum(Number(fValue).toFixed(1));
     const bpmStr = bpm ?? '--';
     const ssStr = fmtShutterLabel(shutterSec);
-
     return `cocoro_${y}-${m}-${d}_${hh}-${mm}-${ss}_${room}_${who}_F${fStr}_BPM${bpmStr}_SS${ssStr}.png`;
   }
 
@@ -438,17 +435,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const ctx = captureCanvas.getContext('2d', { willReadFrequently: true });
 
-      // ① 露光シミュレーション（BPM＝シャッタースピード）
+      // ① 露光シミュレーション（BPM＝分母）
       const sec = exposureTimeSec();
       const frameRate = 30;
       const frameCount = Math.max(1, Math.round(sec * frameRate));
-      const alpha = 1 / frameCount;
+      const alpha = 1 / Math.max(1, frameCount);
 
       ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
-      for (let i = 0; i < frameCount; i++) {
-        ctx.globalAlpha = alpha;
+
+      if (sec < (1 / frameRate)) {
+        // 1/30s より速い → 1フレームのみ
+        ctx.globalAlpha = 1;
         ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-        await sleep(1000 / frameRate);
+      } else {
+        // 1/30s 以上 → 複数フレーム平均合成
+        for (let i = 0; i < frameCount; i++) {
+          ctx.globalAlpha = alpha;
+          ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+          await sleep(1000 / frameRate);
+        }
       }
       ctx.globalAlpha = 1;
 
@@ -467,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const who  = (whoInput?.value || 'anon').trim() || 'anon';
       const room = (roomInput?.value || 'room').trim() || 'room';
 
-      const shutterSec = sec; // 露光時間（上で算出）
+      const shutterSec = sec;
       const filename = buildFilename({
         fValue: selectedFValue,
         bpm: (lastMeasuredBpm || null),
@@ -476,7 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
         room,
       });
 
-      // Canvas → Blob（古い環境向けフォールバック付き）
       const toBlobWithFallback = () => new Promise((resolve) => {
         if (captureCanvas.toBlob) {
           captureCanvas.toBlob(b => resolve(b), 'image/png', 1.0);
@@ -489,7 +493,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const blob = await toBlobWithFallback();
       if (!blob) throw new Error('blob 生成に失敗');
 
-      // ギャラリーのサムネ（先に出す）
       const objectURL = URL.createObjectURL(blob);
       const gallery = ensureGallery();
       const thumb = document.createElement('img');
@@ -499,15 +502,10 @@ document.addEventListener('DOMContentLoaded', () => {
       thumb.addEventListener('click', () => window.open(objectURL, '_blank'));
       gallery.appendChild(thumb);
 
-      // 共有シート（対応端末なら自動で開く）→ DLフォールバック
       const file = new File([blob], filename, { type: 'image/png' });
       try {
         if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'ココロカメラ',
-            text: '今日の一枚',
-          });
+          await navigator.share({ files: [file], title: 'ココロカメラ', text: '今日の一枚' });
         } else {
           const a = document.createElement('a');
           a.href = objectURL;
@@ -524,7 +522,6 @@ document.addEventListener('DOMContentLoaded', () => {
         a.click();
         a.remove();
       }
-      // ※ URL.revokeObjectURL(objectURL) はページ離脱時にまとめて実施推奨
 
     } catch (err) {
       console.error('Capture error:', err);
@@ -554,20 +551,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const adj = (v) => {
       let x = v * brightness;
-      x = ((x - 128) * contrast) + 128; // 簡易コントラスト
+      x = ((x - 128) * contrast) + 128;
       return x < 0 ? 0 : x > 255 ? 255 : x;
     };
 
     for (let i = 0; i < data.length; i += 4) {
       let r = adj(data[i]), g = adj(data[i+1]), b = adj(data[i+2]);
-      const avg = (r + g + b) / 3;      // 彩度（平均との差分を増減）
+      const avg = (r + g + b) / 3;
       r = avg + (r - avg) * saturate;
       g = avg + (g - avg) * saturate;
       b = avg + (b - avg) * saturate;
       data[i]   = r < 0 ? 0 : r > 255 ? 255 : r;
       data[i+1] = g < 0 ? 0 : g > 255 ? 255 : g;
       data[i+2] = b < 0 ? 0 : b > 255 ? 255 : b;
-      // αはそのまま
     }
     ctx.putImageData(id, 0, 0);
   }
@@ -575,4 +571,3 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------- 初期表示 --------
   showScreen('initial');
 });
-

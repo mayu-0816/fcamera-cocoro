@@ -28,6 +28,17 @@ const T = {
   cameraError: "カメラを起動できません。端末の設定からカメラ権限を許可してください。"
 };
 
+    // ★この2つを“今ここ”に追加
+  function applyTexts(dict) {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      const val = typeof dict[key] === 'function' ? dict[key]() : dict[key];
+      if (val != null) el.textContent = val;
+    });
+  }
+  // 起動時に流し込む
+  applyTexts(T);
+  
   // -------- カメラ（撮影プレビュー） --------
   const video = document.getElementById('video');
   const rawCanvas = document.getElementById('canvas');
@@ -545,4 +556,5 @@ const T = {
   // -------- 初期表示 --------
   showScreen('initial');
 });
+
 
